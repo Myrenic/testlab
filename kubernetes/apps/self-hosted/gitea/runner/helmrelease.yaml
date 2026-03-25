@@ -1,0 +1,46 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: gitea-runner
+spec:
+  chartRef:
+    kind: OCIRepository
+    name: gitea-runner
+  install:
+    remediation:
+      retries: 3
+  interval: 30m
+  maxHistory: 3
+  uninstall:
+    keepHistory: false
+  upgrade:
+    remediation:
+      retries: 3
+  values:
+    controller:
+      annotations:
+        reloader.stakater.com/auto: "true"
+    env:
+      GITEA_INSTANCE_URL: http://gitea.default.svc.cluster.local
+      TZ: Europe/Berlin
+    envFrom:
+      - name: gitea-runner-secret
+        secretRef: null
+    image:
+      pullPolicy: IfNotPresent
+      repository: vegardit/gitea-act-runner
+      tag: dind-latest
+    persistence:
+      data:
+        accessMode: ReadWriteOnce
+        enabled: true
+        size: 5Gi
+        storageClass: local-hostpath
+    podSecurityContext:
+      privileged: true
+    securityContext:
+      privileged: true
+    service:
+      main:
+        enabled: false
