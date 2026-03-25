@@ -22,21 +22,3 @@ spec:
         name: metallb
   install:
     createNamespace: true
----
-apiVersion: metallb.io/v1beta1
-kind: IPAddressPool
-metadata:
-  name: main-pool
-  namespace: metallb-system
-spec:
-  addresses:
-  - 10.0.69.35-10.0.69.40
----
-apiVersion: metallb.io/v1beta1
-kind: L2Advertisement
-metadata:
-  name: l2-adv
-  namespace: metallb-system
-spec:
-  ipAddressPools:
-  - main-pool
