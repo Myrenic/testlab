@@ -6,7 +6,7 @@ spec:
   targetNamespace: cert-manager
   interval: 1h
   prune: true
-  path: ./cluster/apps/cert-manager/cert-manager/base
+  path: ./kubernetes/apps/cert-manager/cert-manager/base
   sourceRef:
     kind: GitRepository
     name: flux-system
