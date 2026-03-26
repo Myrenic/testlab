@@ -3,3 +3,5 @@ kind: Kustomization
 resources:
   - ./namespace.yaml
   - ./cloudflare-tunnel/ks.yaml
+  - ./envoy-gateway/ks.yaml
+  - ./envoy-gateway/config-ks.yaml
