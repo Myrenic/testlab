@@ -2,32 +2,32 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: proxmox
+  name: homeassistant
   namespace: network
 spec:
   ports:
     - name: http
-      port: 8006
+      port: 8123
       protocol: TCP
-      targetPort: 8006
+      targetPort: 8123
 ---
 apiVersion: v1
 kind: Endpoints
 metadata:
-  name: proxmox
+  name: homeassistant
   namespace: network
 subsets:
   - addresses:
-      - ip: 10.0.3.10
+      - ip: 10.0.100.11
     ports:
       - name: http
-        port: 8006
+        port: 8123
         protocol: TCP
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: proxmox
+  name: homeassistant
   namespace: network
 spec:
   parentRefs:
@@ -35,9 +35,9 @@ spec:
       namespace: network
       sectionName: https-0
   hostnames:
-    - "proxmox.${SECRET_DOMAIN_0}"
+    - "home.${SECRET_DOMAIN_0}"
   rules:
     - backendRefs:
-        - name: proxmox
+        - name: homeassistant
           namespace: network
-          port: 8006
+          port: 8123
