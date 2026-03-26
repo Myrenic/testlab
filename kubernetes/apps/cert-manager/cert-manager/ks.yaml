@@ -6,6 +6,8 @@ metadata:
 spec:
   targetNamespace: cert-manager
   interval: 1h
+  retryInterval: 1m
+  timeout: 3m
   prune: true
   path: ./kubernetes/apps/cert-manager/cert-manager/base
   sourceRef:
