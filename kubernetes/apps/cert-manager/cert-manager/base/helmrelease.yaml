@@ -14,9 +14,7 @@ spec:
     dns01RecursiveNameservers: https://1.1.1.1:443/dns-query,https://9.9.9.11:443/dns-query
     dns01RecursiveNameserversOnly: true
     prometheus:
-      enabled: true
-      servicemonitor:
-        enabled: true
+      enabled: false
     webhook:
       replicaCount: 2
       podDisruptionBudget:
