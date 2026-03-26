@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - ./flux-operator.yaml
   - ./homeassistant.yaml
+  - ./aiostreams.yaml
