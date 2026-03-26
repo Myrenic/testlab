@@ -9,8 +9,8 @@ spec:
   interval: 1m0s
   ref:
     branch: main
-  # secretRef:
-  #   name: flux-system
+  secretRef:
+    name: flux-system
   url: https://github.com/myrenic/testlab
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
@@ -25,3 +25,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
+decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
