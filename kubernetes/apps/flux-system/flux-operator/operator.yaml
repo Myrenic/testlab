@@ -24,3 +24,4 @@ spec:
   values:
     ui:
       enabled: true
+
