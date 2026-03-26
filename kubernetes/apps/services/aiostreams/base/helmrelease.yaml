@@ -23,7 +23,7 @@ spec:
               ADDON_NAME: "AIOStreams"
               ADDON_ID: "aiostreams.${SECRET_DOMAIN_0}"
               PORT: "3000"
-              BASE_URL: "aiostreams.${SECRET_DOMAIN_0}"
+              BASE_URL: "https://aiostreams.${SECRET_DOMAIN_0}"
               SECRET_KEY: "${AIOSTREAM_SECRET_KEY}"
               ADDON_PASSWORD: "${AIOSTREAM_ADDON_PASSWORD}"
               DATABASE_URI: "sqlite://./data/db.sqlite"
