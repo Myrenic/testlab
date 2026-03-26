@@ -5,4 +5,5 @@ resources:
   - flux-system
   - cert-manager
   - network
+  - storage
   - services

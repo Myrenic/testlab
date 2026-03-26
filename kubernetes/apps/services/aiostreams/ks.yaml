@@ -16,4 +16,6 @@ spec:
     substituteFrom:
       - kind: Secret
         name: cluster-secrets
+  dependsOn:
+    - name: longhorn
   wait: false
