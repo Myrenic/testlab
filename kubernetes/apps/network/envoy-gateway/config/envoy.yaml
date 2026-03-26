@@ -19,6 +19,7 @@ spec:
               memory: 512Mi
       envoyService:
         type: ClusterIP
+        name: envoy-external
   shutdown:
     drainTimeout: 30s
 
