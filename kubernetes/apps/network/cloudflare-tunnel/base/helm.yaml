@@ -1,3 +1,5 @@
+---
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/main/charts/other/app-template/schemas/helmrelease-helm-v2.schema.json
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
@@ -22,6 +24,8 @@ spec:
             env:
               NO_AUTOUPDATE: true
               TUNNEL_METRICS: 0.0.0.0:8080
+              # TUNNEL_TRANSPORT_PROTOCOL: http2
+              # TUNNEL_ORIGIN_ENABLE_HTTP2: true
             envFrom:
               - secretRef:
                   name: "{{ .Release.Name }}-secret"
@@ -47,9 +51,9 @@ spec:
               capabilities: {drop: ["ALL"]}
             resources:
               requests:
-                cpu: 10m
+                cpu: 20m
               limits:
-                memory: 256Mi
+                memory: 512Mi
     defaultPodOptions:
       securityContext:
         runAsNonRoot: true
@@ -67,14 +71,18 @@ spec:
             ingress:
               - hostname: "*.${SECRET_DOMAIN_0}"
                 originRequest:
-                  noTLSVerify: true
-                  originServerName: "fake.${SECRET_DOMAIN_0}"
-                service: https://envoy-external.network.svc.cluster.local:443
+                  http2Origin: true
+                  keepAliveTimeout: 3600s
+                  originServerName: external.${SECRET_DOMAIN_0}
+                  tcpKeepAlive: 7200s
+                service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
               - hostname: "*.${SECRET_DOMAIN_1}"
                 originRequest:
-                  noTLSVerify: true
-                  originServerName: "fake.${SECRET_DOMAIN_1}"
-                service: https://envoy-external.network.svc.cluster.local:443
+                  http2Origin: true
+                  keepAliveTimeout: 3600s
+                  originServerName: external.${SECRET_DOMAIN_1}
+                  tcpKeepAlive: 7200s
+                service: https://envoy-external.{{ .Release.Namespace }}.svc.cluster.local:443
               - service: http_status:404
     persistence:
       config-file:
