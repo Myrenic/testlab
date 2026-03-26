@@ -19,3 +19,7 @@ spec:
   dependsOn:
     - name: longhorn
   wait: false
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
