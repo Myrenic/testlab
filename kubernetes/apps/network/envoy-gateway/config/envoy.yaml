@@ -76,16 +76,17 @@ spec:
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
 metadata:
-  name: envoy
+  name: envoy-external
 spec:
   retry:
     numRetries: 2
     retryOn:
       triggers:
         - reset
-  targetSelectors:
+  targetRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
+      name: envoy-external
   tcpKeepalive: {}
   timeout:
     http:
@@ -95,7 +96,7 @@ spec:
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: ClientTrafficPolicy
 metadata:
-  name: envoy
+  name: envoy-external
 spec:
   clientIPDetection:
     xForwardedFor:
@@ -103,9 +104,10 @@ spec:
         - 10.244.0.0/16
   http2:
     onInvalidMessage: TerminateStream
-  targetSelectors:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: envoy-external
   tcpKeepalive: {}
   tls:
     minVersion: "1.2"
