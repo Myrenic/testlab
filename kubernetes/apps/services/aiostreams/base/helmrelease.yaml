@@ -21,9 +21,9 @@ spec:
             env:
               TZ: "${TZ}"
               ADDON_NAME: "AIOStreams"
-              ADDON_ID: "aiostreams.${SECRET_DOMAIN_0}"
+              ADDON_ID: "aiostreams.${SECRET_DOMAIN}"
               PORT: "3000"
-              BASE_URL: "https://aiostreams.${SECRET_DOMAIN_0}"
+              BASE_URL: "https://aiostreams.${SECRET_DOMAIN}"
               SECRET_KEY: "${AIOSTREAM_SECRET_KEY}"
               ADDON_PASSWORD: "${AIOSTREAM_ADDON_PASSWORD}"
               DATABASE_URI: "sqlite://./data/db.sqlite"

@@ -9,9 +9,17 @@ spec:
       namespace: network
       sectionName: https-0
   hostnames:
-    - "aiostreams.${SECRET_DOMAIN_0}"
+    - "aiostreams.${SECRET_DOMAIN}"
   rules:
     - backendRefs:
         - name: aiostreams
           namespace: services
           port: 3000
+    - filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            remove:
+              - x-forwarded-host
+              - x-forwarded-proto
+              - x-forwarded-port
+              - x-forwarded-for

@@ -53,7 +53,7 @@ spec:
     - name: https-0
       protocol: HTTPS
       port: 443
-      hostname: "*.${SECRET_DOMAIN_0}"
+      hostname: "*.${SECRET_DOMAIN}"
       allowedRoutes:
         namespaces:
           from: All
@@ -61,18 +61,6 @@ spec:
         certificateRefs:
           - kind: Secret
             name: domain-0-prod-tls
-    - name: https-1
-      protocol: HTTPS
-      port: 443
-      hostname: "*.${SECRET_DOMAIN_1}"
-      allowedRoutes:
-        namespaces:
-          from: All
-      tls:
-        certificateRefs:
-          - kind: Secret
-            name: domain-1-prod-tls
-
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy

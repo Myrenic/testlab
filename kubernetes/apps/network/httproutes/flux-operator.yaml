@@ -9,7 +9,7 @@ spec:
       namespace: network
       sectionName: https-0
   hostnames:
-    - "flux.${SECRET_DOMAIN_0}"
+    - "flux.${SECRET_DOMAIN}"
   rules:
     - backendRefs:
         - name: flux-operator
