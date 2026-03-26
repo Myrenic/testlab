@@ -6,9 +6,13 @@ spec:
   targetNamespace: network
   interval: 1h
   prune: true
-  path: ./cluster/apps/network/cloudflare-tunnel/base
+  path: ./kubernetes/apps/network/cloudflare-tunnel/base
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: cluster-secrets
   wait: false

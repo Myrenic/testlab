@@ -1,5 +1,5 @@
 creation_rules:
   - encrypted_regex: '^(data|stringData)$'
-    path_regex: '.*-secret\.sops\.ya?ml$'
+    path_regex: 'kubernetes/.*\.sops\.ya?ml$'
     age: >-
       age10qpu76yk6rvyaunmsadkej3l0pwuk4mn4uhxnem4cyl9zjrucgmsndh72v
