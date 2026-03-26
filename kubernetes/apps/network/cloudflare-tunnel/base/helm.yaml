@@ -68,10 +68,12 @@ spec:
               - hostname: "*.${SECRET_DOMAIN_0}"
                 originRequest:
                   noTLSVerify: true
+                  originServerName: "fake.${SECRET_DOMAIN_0}"
                 service: https://envoy-external.network.svc.cluster.local:443
               - hostname: "*.${SECRET_DOMAIN_1}"
                 originRequest:
                   noTLSVerify: true
+                  originServerName: "fake.${SECRET_DOMAIN_1}"
                 service: https://envoy-external.network.svc.cluster.local:443
               - service: http_status:404
     persistence:
