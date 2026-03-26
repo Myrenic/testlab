@@ -4,5 +4,4 @@ kind: Kustomization
 resources:
   - ./aiostreams-secret.sops.yaml
   - ./helmrelease.yaml
-  - ./httproute.yaml
   - ./ocirepository.yaml
