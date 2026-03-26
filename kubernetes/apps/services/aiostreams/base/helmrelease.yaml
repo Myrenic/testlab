@@ -19,11 +19,13 @@ spec:
               - secretRef:
                   name: aiostreams-secret
             env:
-              TZ: Europe/Berlin
+              TZ: "${TZ}"
               ADDON_NAME: "AIOStreams"
-              ADDON_ID: "aiostreams.tuntelder.com"
+              ADDON_ID: "aiostreams.${SECRET_DOMAIN_0}"
               PORT: "3000"
-              BASE_URL: "https://aiostreams.tuntelder.com"
+              BASE_URL: "aiostreams.${SECRET_DOMAIN_0}"
+              SECRET_KEY: "${AIOSTREAM_SECRET_KEY}"
+              ADDON_PASSWORD: "${AIOSTREAM_ADDON_PASSWORD}"
               DATABASE_URI: "sqlite://./data/db.sqlite"
               BUILTIN_STREMTHRU_URL: "https://stremthru.13377001.xyz"
               BUILTIN_SCRAPE_WITH_ALL_TITLES: "false"
