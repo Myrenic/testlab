@@ -19,7 +19,7 @@ metadata:
 spec:
   secretName: domain-1-prod-tls
   issuerRef:
-    name: domain-1-prod
+    name: cluster-selfsigned
     kind: ClusterIssuer
   dnsNames:
     - "${SECRET_DOMAIN_1}"
