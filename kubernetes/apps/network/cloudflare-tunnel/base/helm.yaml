@@ -17,7 +17,7 @@ spec:
         containers:
           app:
             image:
-              repository: cloudflare/cloudflared:latest
+              repository: mirror.gcr.io/cloudflare/cloudflared
               tag: latest
             env:
               NO_AUTOUPDATE: true
