@@ -93,28 +93,28 @@ spec:
     http:
       requestTimeout: 0s
 
----
-apiVersion: gateway.envoyproxy.io/v1alpha1
-kind: ClientTrafficPolicy
-metadata:
-  name: envoy-external
-spec:
-  clientIPDetection:
-    xForwardedFor:
-      trustedCIDRs:
-        - 10.244.0.0/16
-  http2:
-    onInvalidMessage: TerminateStream
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: envoy-external
-  tcpKeepalive: {}
-  tls:
-    minVersion: "1.2"
-    alpnProtocols:
-      - h2
-      - http/1.1
+# ---
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: ClientTrafficPolicy
+# metadata:
+#   name: envoy-external
+# spec:
+#   clientIPDetection:
+#     xForwardedFor:
+#       trustedCIDRs:
+#         - 10.244.0.0/16
+#   http2:
+#     onInvalidMessage: TerminateStream
+#   targetRef:
+#     group: gateway.networking.k8s.io
+#     kind: Gateway
+#     name: envoy-external
+#   tcpKeepalive: {}
+#   tls:
+#     minVersion: "1.2"
+#     alpnProtocols:
+#       - h2
+#       - http/1.1
 
 ---
 apiVersion: gateway.networking.k8s.io/v1
