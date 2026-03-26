@@ -9,8 +9,8 @@ spec:
   interval: 1m0s
   ref:
     branch: main
-  secretRef:
-    name: flux-system
+  # secretRef:
+  #   name: flux-system
   url: ssh://git@github.com/myrenic/testlab
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
