@@ -15,11 +15,3 @@ spec:
         - name: aiostreams
           namespace: services
           port: 3000
-      filters:
-        - type: RequestHeaderModifier
-          requestHeaderModifier:
-            remove:
-              - x-forwarded-host
-              - x-forwarded-proto
-              - x-forwarded-port
-              - x-forwarded-for

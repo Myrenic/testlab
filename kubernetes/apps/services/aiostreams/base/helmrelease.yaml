@@ -115,7 +115,7 @@ spec:
               MAX_TIMEOUT: "50000"
               MIN_TIMEOUT: "1000"
               PRECACHE_NEXT_EPISODE_MIN_INTERVAL: "86400"
-              DISABLE_RATE_LIMITS: "false"
+              DISABLE_RATE_LIMITS: "true"
               STATIC_RATE_LIMIT_WINDOW: "5"
               STATIC_RATE_LIMIT_MAX_REQUESTS: "75"
               USER_API_RATE_LIMIT_WINDOW: "5"
