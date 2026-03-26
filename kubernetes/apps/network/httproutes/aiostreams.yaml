@@ -9,7 +9,7 @@ spec:
       namespace: network
       sectionName: https-0
   hostnames:
-    - "aiostreams.${SECRET_DOMAIN}"
+    - "aiostreams.${SECRET_DOMAIN_0}"
   rules:
     - backendRefs:
         - name: aiostreams
