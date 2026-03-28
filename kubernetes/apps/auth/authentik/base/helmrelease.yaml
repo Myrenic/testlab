@@ -33,7 +33,6 @@ spec:
         - secretRef:
             name: authentik-secret
     authentik:
-      secret_key: ""
       error_reporting:
         enabled: false
     postgresql:
