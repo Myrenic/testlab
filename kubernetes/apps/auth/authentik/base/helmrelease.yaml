@@ -33,17 +33,16 @@ spec:
         - secretRef:
             name: authentik-secret
     authentik:
+      secret_key: ${AUTHENTIK_SECRET_KEY}
       error_reporting:
         enabled: false
+      postgresql:
+        password: ${AUTHENTIK_POSTGRESQL_PASSWORD}
     postgresql:
       enabled: true
+      auth:
+        password: ${AUTHENTIK_POSTGRESQL_PASSWORD}
       primary:
         persistence:
           enabled: true
           size: 2Gi
-    redis:
-      enabled: true
-      master:
-        persistence:
-          enabled: true
-          size: 1Gi
