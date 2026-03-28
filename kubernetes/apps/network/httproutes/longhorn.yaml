@@ -1,7 +1,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: flux-operator
+  name: longhorn
   namespace: network
 spec:
   parentRefs:
@@ -9,9 +9,9 @@ spec:
       namespace: network
       sectionName: https-0
   hostnames:
-    - "flux.${SECRET_DOMAIN_0}"
+    - "longhorn.${SECRET_DOMAIN_0}"
   rules:
     - backendRefs:
-        - name: flux-operator
-          namespace: flux-system
-          port: 9080
+        - name: longhorn-frontend
+          namespace: storage
+          port: 80

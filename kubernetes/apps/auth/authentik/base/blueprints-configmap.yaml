@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authentik-blueprints
+data:
+  oidc-provider.yaml: |
+    # Authentik Blueprint: OIDC Provider for Envoy Gateway
+    version: 1
+    metadata:
+      name: Envoy Gateway OIDC Provider
+    entries:
+      - model: authentik_providers_oauth2.oauth2provider
+        id: envoy-gateway-provider
+        state: present
+        attrs:
+          name: Envoy Gateway
+          authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
+          client_type: confidential
+          client_id: !Env AUTHENTIK_OIDC_CLIENT_ID
+          client_secret: !Env AUTHENTIK_OIDC_CLIENT_SECRET
+          redirect_uris: |-
+            https://flux.${SECRET_DOMAIN_0}/oauth2/callback
+            https://longhorn.${SECRET_DOMAIN_0}/oauth2/callback
+          signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+          property_mappings:
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+            - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+      - model: authentik_core.application
+        id: envoy-gateway-app
+        state: present
+        attrs:
+          name: Envoy Gateway
+          slug: envoy-gateway
+          provider: !KeyOf envoy-gateway-provider
+          meta_launch_url: "https://flux.${SECRET_DOMAIN_0}"
+  azure-federation.yaml: |
+    # Authentik Blueprint: Azure Entra ID Federation Source
+    version: 1
+    metadata:
+      name: Azure Entra ID Federation
+    entries:
+      - model: authentik_sources_oauth.oauthsource
+        id: azure-entra-id
+        state: present
+        attrs:
+          name: Azure Entra ID
+          slug: azure-entra-id
+          authentication_flow: !Find [authentik_flows.flow, [slug, default-source-authentication]]
+          enrollment_flow: !Find [authentik_flows.flow, [slug, default-source-enrollment]]
+          provider_type: azuread
+          consumer_key: !Env AZURE_CLIENT_ID
+          consumer_secret: !Env AZURE_CLIENT_SECRET
+          oidc_well_known_url: !Format ["https://login.microsoftonline.com/%s/v2.0/.well-known/openid-configuration", !Env AZURE_TENANT_ID]
+          oidc_jwks_url: !Format ["https://login.microsoftonline.com/%s/discovery/v2.0/keys", !Env AZURE_TENANT_ID]

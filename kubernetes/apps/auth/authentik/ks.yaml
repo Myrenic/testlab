@@ -1,24 +1,25 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: envoy-gateway-config
+  name: authentik
   namespace: flux-system
 spec:
-  targetNamespace: network
+  targetNamespace: auth
   interval: 1h
   retryInterval: 1m
   timeout: 5m
   prune: true
-  path: ./kubernetes/apps/network/envoy-gateway/config
+  path: ./kubernetes/apps/auth/authentik/base
   sourceRef:
     kind: GitRepository
     name: flux-system
     namespace: flux-system
-  dependsOn:
-    - name: envoy-gateway
-    - name: cert-manager-issuers
-    - name: authentik
   postBuild:
     substituteFrom:
       - kind: Secret
         name: cluster-secrets
+  healthChecks:
+    - apiVersion: helm.toolkit.fluxcd.io/v2
+      kind: HelmRelease
+      name: authentik
+      namespace: auth
