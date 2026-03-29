@@ -6,3 +6,5 @@ resources:
   - ./traefik/ks.yaml
   - ./ingressroutes/ks.yaml
   - traefik-crds/
+  - ./metallb
+  - ./metallb-pool
