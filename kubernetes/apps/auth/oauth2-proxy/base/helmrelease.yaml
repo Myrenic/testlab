@@ -37,4 +37,5 @@ spec:
       reverse-proxy: "true"
       email-domain: "*"
       cookie-secure: "true"
+      skip-provider-button: "true"
       scope: "openid email profile"
