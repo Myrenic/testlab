@@ -9,6 +9,9 @@ env:
   FLUX_VERSION: "2.7.5"
   KIND_CLUSTER_NAME: "testlab"
 
+permissions:
+  contents: read
+
 jobs:
   test-cluster:
     name: Validate cluster in KinD
