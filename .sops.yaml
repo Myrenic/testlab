@@ -1,5 +1,9 @@
 creation_rules:
   - encrypted_regex: '^(data|stringData)$'
+    path_regex: 'kubernetes/test/.*\.sops\.ya?ml$'
+    age: >-
+      age19afe8g4mvq84p0q4jf4jm580faa3g3qzkntmh9wuxjqpjg5t34vsfstffp
+  - encrypted_regex: '^(data|stringData)$'
     path_regex: 'kubernetes/.*\.sops\.ya?ml$'
     age: >-
       age10qpu76yk6rvyaunmsadkej3l0pwuk4mn4uhxnem4cyl9zjrucgmsndh72v

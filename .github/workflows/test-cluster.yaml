@@ -1,0 +1,293 @@
+name: Test Cluster Validation
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FLUX_VERSION: "2.7.5"
+  KIND_CLUSTER_NAME: "testlab"
+
+jobs:
+  test-cluster:
+    name: Validate cluster in KinD
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create KinD cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: ${{ env.KIND_CLUSTER_NAME }}
+          config: .github/kind-config.yaml
+          wait: 120s
+
+      - name: Install Flux CLI
+        uses: fluxcd/flux2/action@main
+        with:
+          version: ${{ env.FLUX_VERSION }}
+
+      - name: Verify KinD Docker network range
+        run: |
+          echo "=== KinD Docker Network ==="
+          docker network inspect kind -f '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
+          echo "MetalLB test pool uses 172.18.255.200-172.18.255.250"
+          echo "Verifying subnet contains the pool range..."
+          SUBNET=$(docker network inspect kind -f '{{range .IPAM.Config}}{{.Subnet}}{{end}}')
+          if [[ "$SUBNET" == *"172.18"* ]]; then
+            echo "KinD network ($SUBNET) is compatible with MetalLB pool"
+          else
+            echo "WARNING: KinD network ($SUBNET) may not be compatible with the MetalLB pool 172.18.255.200-172.18.255.250"
+            echo "Tests may fail if MetalLB cannot advertise addresses"
+          fi
+
+      - name: Install Flux controllers
+        run: flux install
+
+      - name: Verify Flux controllers are ready
+        run: flux check
+
+      - name: Create SOPS age key secret
+        run: |
+          kubectl create secret generic sops-age \
+            --namespace=flux-system \
+            --from-literal=age.agekey="${{ secrets.SOPS_AGE_TEST_KEY }}"
+
+      - name: Create Flux GitRepository source
+        run: |
+          flux create source git flux-system \
+            --url="https://github.com/${{ github.repository }}" \
+            --branch="${{ github.head_ref || github.ref_name }}" \
+            --interval=1m \
+            --username=git \
+            --password="${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Apply test kustomization via Flux
+        run: |
+          # First apply cluster-secrets directly so Flux can substitute variables
+          # The Flux Kustomization for the root will handle the rest
+          flux create kustomization flux-system \
+            --source=GitRepository/flux-system \
+            --path="./kubernetes/test" \
+            --prune=true \
+            --interval=10m \
+            --decryption-provider=sops \
+            --decryption-secret=sops-age
+
+      - name: Wait for cluster-secrets to be created
+        run: |
+          echo "Waiting for cluster-secrets to be available..."
+          kubectl wait --for=condition=Ready kustomization/flux-system \
+            --namespace=flux-system \
+            --timeout=120s || true
+          # Give Flux time to reconcile the root and create sub-kustomizations
+          sleep 15
+
+      - name: Wait for cert-manager HelmRelease
+        run: |
+          echo "Waiting for cert-manager..."
+          kubectl wait --for=condition=Ready kustomization/cert-manager \
+            --namespace=flux-system \
+            --timeout=300s
+
+      - name: Wait for cert-manager issuers
+        run: |
+          echo "Waiting for cert-manager issuers..."
+          kubectl wait --for=condition=Ready kustomization/cert-manager-issuers \
+            --namespace=flux-system \
+            --timeout=300s
+
+      - name: Wait for MetalLB
+        run: |
+          echo "Waiting for MetalLB..."
+          kubectl wait --for=condition=Ready kustomization/metallb \
+            --namespace=flux-system \
+            --timeout=300s
+
+      - name: Configure MetalLB address pool for KinD
+        run: |
+          echo "Waiting for MetalLB pool..."
+          kubectl wait --for=condition=Ready kustomization/metallb-pool \
+            --namespace=flux-system \
+            --timeout=300s
+
+      - name: Wait for Traefik
+        run: |
+          echo "Waiting for Traefik..."
+          kubectl wait --for=condition=Ready kustomization/traefik \
+            --namespace=flux-system \
+            --timeout=300s
+
+      - name: Wait for hello-world
+        run: |
+          echo "Waiting for hello-world..."
+          kubectl wait --for=condition=Ready kustomization/hello-world \
+            --namespace=flux-system \
+            --timeout=300s
+
+      - name: Verify all Flux Kustomizations are ready
+        run: |
+          echo "=== Flux Kustomizations ==="
+          flux get kustomizations -A
+          echo ""
+          echo "Checking all kustomizations are ready..."
+          flux get kustomizations -A --status-selector ready=false 2>&1 | tee /tmp/failed-ks.txt
+          if grep -q "flux-system" /tmp/failed-ks.txt 2>/dev/null; then
+            echo "ERROR: Some kustomizations are not ready"
+            exit 1
+          fi
+          echo "All Flux Kustomizations are ready!"
+
+      - name: Verify all HelmReleases are ready
+        run: |
+          echo "=== HelmReleases ==="
+          flux get helmreleases -A
+          echo ""
+          echo "Checking all HelmReleases are ready..."
+          FAILED=$(flux get helmreleases -A --status-selector ready=false 2>&1 || true)
+          if echo "$FAILED" | grep -qE "network|cert-manager"; then
+            echo "ERROR: Some HelmReleases are not ready"
+            echo "$FAILED"
+            exit 1
+          fi
+          echo "All HelmReleases are ready!"
+
+      - name: Verify MetalLB health
+        run: |
+          echo "=== MetalLB Pods ==="
+          kubectl get pods -n network -l app.kubernetes.io/name=metallb -o wide
+          echo ""
+          echo "Checking MetalLB controller is running..."
+          kubectl wait --for=condition=Ready pods -n network \
+            -l app.kubernetes.io/component=controller,app.kubernetes.io/name=metallb \
+            --timeout=60s
+          echo "MetalLB controller is healthy!"
+          echo ""
+          echo "Checking MetalLB speaker is running..."
+          kubectl wait --for=condition=Ready pods -n network \
+            -l app.kubernetes.io/component=speaker,app.kubernetes.io/name=metallb \
+            --timeout=60s
+          echo "MetalLB speaker is healthy!"
+
+      - name: Verify Traefik health
+        run: |
+          echo "=== Traefik Pods ==="
+          kubectl get pods -n network -l app=traefik -o wide
+          echo ""
+          echo "Checking Traefik is running..."
+          kubectl wait --for=condition=Ready pods -n network \
+            -l app=traefik \
+            --timeout=60s
+          echo "Traefik is healthy!"
+          echo ""
+          echo "=== Traefik Service ==="
+          kubectl get svc -n network traefik -o wide
+          TRAEFIK_IP=$(kubectl get svc -n network traefik -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Traefik LoadBalancer IP: $TRAEFIK_IP"
+          if [ -z "$TRAEFIK_IP" ]; then
+            echo "ERROR: Traefik did not get a LoadBalancer IP from MetalLB"
+            exit 1
+          fi
+          echo "Traefik has a LoadBalancer IP!"
+
+      - name: Verify cert-manager health
+        run: |
+          echo "=== cert-manager Pods ==="
+          kubectl get pods -n cert-manager -o wide
+          echo ""
+          echo "Checking cert-manager pods are running..."
+          kubectl wait --for=condition=Ready pods -n cert-manager \
+            --all \
+            --timeout=60s
+          echo "cert-manager is healthy!"
+          echo ""
+          echo "=== ClusterIssuers ==="
+          kubectl get clusterissuers -o wide
+
+      - name: Verify hello-world health
+        run: |
+          echo "=== Hello World Pods ==="
+          kubectl get pods -n hello-world -o wide
+          echo ""
+          echo "Checking hello-world is running..."
+          kubectl wait --for=condition=Ready pods -n hello-world \
+            -l app=hello-world \
+            --timeout=60s
+          echo "Hello World is healthy!"
+
+      - name: Test hello-world route via Traefik
+        run: |
+          TRAEFIK_IP=$(kubectl get svc -n network traefik -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Testing hello-world via Traefik at $TRAEFIK_IP..."
+          echo ""
+
+          # Test the /hello path route
+          echo "=== Testing /hello path ==="
+          for i in $(seq 1 10); do
+            HTTP_CODE=$(curl -s -o /tmp/hello-response.txt -w '%{http_code}' \
+              "http://${TRAEFIK_IP}/hello" \
+              --max-time 5 2>/dev/null || echo "000")
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "Hello world route is reachable! (HTTP $HTTP_CODE)"
+              echo "Response:"
+              cat /tmp/hello-response.txt
+              break
+            fi
+            echo "Attempt $i: HTTP $HTTP_CODE - retrying in 5s..."
+            sleep 5
+          done
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "ERROR: Hello world route is not reachable after 10 attempts"
+            echo "Last response:"
+            cat /tmp/hello-response.txt 2>/dev/null || true
+            echo ""
+            echo "=== Debug: IngressRoutes ==="
+            kubectl get ingressroutes -A -o wide
+            echo ""
+            echo "=== Debug: Traefik logs ==="
+            kubectl logs -n network -l app=traefik --tail=50
+            exit 1
+          fi
+
+          # Test the Host header route
+          echo ""
+          echo "=== Testing Host header route ==="
+          HTTP_CODE=$(curl -s -o /tmp/hello-host-response.txt -w '%{http_code}' \
+            -H "Host: hello.test.local" \
+            "http://${TRAEFIK_IP}/" \
+            --max-time 5 2>/dev/null || echo "000")
+          echo "Host-based route: HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "Host-based hello world route is reachable!"
+          else
+            echo "WARNING: Host-based route returned HTTP $HTTP_CODE (non-critical)"
+          fi
+
+      - name: Final cluster status summary
+        if: always()
+        run: |
+          echo "========================================="
+          echo "       CLUSTER VALIDATION SUMMARY"
+          echo "========================================="
+          echo ""
+          echo "=== Flux Kustomizations ==="
+          flux get kustomizations -A 2>/dev/null || true
+          echo ""
+          echo "=== HelmReleases ==="
+          flux get helmreleases -A 2>/dev/null || true
+          echo ""
+          echo "=== All Pods ==="
+          kubectl get pods -A -o wide 2>/dev/null || true
+          echo ""
+          echo "=== Services ==="
+          kubectl get svc -A 2>/dev/null || true
+          echo ""
+          echo "=== IngressRoutes ==="
+          kubectl get ingressroutes -A -o wide 2>/dev/null || true
+          echo ""
+          echo "=== Events (warnings) ==="
+          kubectl get events -A --field-selector type=Warning --sort-by='.lastTimestamp' 2>/dev/null | tail -20 || true

@@ -1,0 +1,27 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: traefik
+  namespace: flux-system
+spec:
+  targetNamespace: network
+  interval: 1h
+  retryInterval: 1m
+  timeout: 5m
+  prune: true
+  path: ./kubernetes/test/network/traefik/base
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+    namespace: flux-system
+  dependsOn:
+    - name: metallb-pool
+  postBuild:
+    substituteFrom:
+      - kind: Secret
+        name: cluster-secrets
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: traefik
+      namespace: network
