@@ -29,6 +29,7 @@ spec:
     extraArgs:
       provider: oidc
       oidc-issuer-url: "https://login.microsoftonline.com/${AZURE_TENANT_ID}/v2.0"
+      oidc-email-claim: "preferred_username"
       redirect-url: "https://auth.${SECRET_DOMAIN_0}/oauth2/callback"
       cookie-domain: ".${SECRET_DOMAIN_0}"
       whitelist-domain: ".${SECRET_DOMAIN_0}"
