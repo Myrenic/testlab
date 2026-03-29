@@ -13,4 +13,5 @@ spec:
         - name: flux-operator
           namespace: flux-system
           port: 9080
-  tls: {}
+  tls:
+    secretName: domain-0-prod-tls

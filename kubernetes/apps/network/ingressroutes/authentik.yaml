@@ -13,5 +13,6 @@ spec:
         - name: authentik-server
           namespace: auth
           port: 80
-  tls: {}
+  tls:
+    secretName: domain-0-prod-tls
 

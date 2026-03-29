@@ -39,4 +39,5 @@ spec:
         - name: homeassistant
           namespace: network
           port: 8123
-  tls: {}
+  tls:
+    secretName: domain-0-prod-tls
