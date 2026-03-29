@@ -37,5 +37,13 @@ spec:
       reverse-proxy: "true"
       email-domain: "*"
       cookie-secure: "true"
-      skip-provider-button: "true"
+      custom-templates-dir: "/templates"
       scope: "openid email profile"
+    extraVolumes:
+      - name: custom-templates
+        configMap:
+          name: oauth2-proxy-templates
+    extraVolumeMounts:
+      - name: custom-templates
+        mountPath: /templates
+        readOnly: true
