@@ -4,7 +4,7 @@ kind: Kustomization
 resources:
   - ./certificate.yaml
   - ./middlewares.yaml
-  - ./authentik.yaml
+  - ./oauth2-proxy.yaml
   - ./flux-operator.yaml
   - ./longhorn.yaml
   - ./homeassistant.yaml

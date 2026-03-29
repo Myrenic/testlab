@@ -1,7 +1,7 @@
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: authentik
+  name: oauth2-proxy
   namespace: network
 spec:
   entryPoints:
@@ -10,7 +10,7 @@ spec:
     - match: Host(`auth.${SECRET_DOMAIN_0}`)
       kind: Rule
       services:
-        - name: authentik-server
+        - name: oauth2-proxy
           namespace: auth
           port: 80
   tls:
