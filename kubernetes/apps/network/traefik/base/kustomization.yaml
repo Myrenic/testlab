@@ -1,7 +1,13 @@
-# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+---
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: network
+
 resources:
-  - ./helmrepository.yaml
-  - ./helmrelease.yaml
-  - ./certificate.yaml
+  - roles.yaml
+  - volumes.yaml
+  - deployment.yaml
+  - service.yaml
+  - secrets.yaml
+  - middleware.yaml
+  - plugin.yaml
