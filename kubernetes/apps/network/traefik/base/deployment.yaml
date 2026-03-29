@@ -18,12 +18,12 @@ spec:
       containers:
         - name: traefik
           image: traefik:v3.5.2
-          env:
-            - name: CLOUDFLARE_DNS_API_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: cloudflare-api-token
-                  key: api-token
+          # env:
+          #   - name: CLOUDFLARE_DNS_API_TOKEN
+          #     valueFrom:
+          #       secretKeyRef:
+          #         name: cloudflare-api-token
+          #         key: api-token
           args:
             - --log.level=INFO
             - --log.format=json
