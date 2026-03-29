@@ -34,6 +34,6 @@ spec:
       whitelist-domain: ".${SECRET_DOMAIN_0}"
       set-xauthrequest: "true"
       reverse-proxy: "true"
-      email-domains: "*"
+      email-domain: "*"
       cookie-secure: "true"
       scope: "openid email profile"
