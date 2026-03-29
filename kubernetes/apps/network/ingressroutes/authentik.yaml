@@ -13,6 +13,5 @@ spec:
         - name: authentik-server
           namespace: auth
           port: 80
-  tls:
-    certResolver: letsencrypt
+  tls: {}
 

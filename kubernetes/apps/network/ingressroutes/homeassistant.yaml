@@ -39,5 +39,4 @@ spec:
         - name: homeassistant
           namespace: network
           port: 8123
-  tls:
-    certResolver: letsencrypt
+  tls: {}

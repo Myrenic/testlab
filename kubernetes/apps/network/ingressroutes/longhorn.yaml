@@ -16,5 +16,4 @@ spec:
         - name: longhorn-frontend
           namespace: storage
           port: 80
-  tls:
-    certResolver: letsencrypt
+  tls: {}
