@@ -8,3 +8,4 @@ resources:
   - ./longhorn.yaml
   - ./homeassistant.yaml
   - ./aiostreams.yaml
+  - ./traefik.yaml

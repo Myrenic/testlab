@@ -9,9 +9,9 @@ spec:
   routes:
     - match: Host(`longhorn.${SECRET_DOMAIN_0}`)
       kind: Rule
-      middlewares:
-        - name: authentik-forwardauth
-          namespace: network
+      # middlewares:
+      #   - name: authentik-forwardauth
+      #     namespace: network
       services:
         - name: longhorn-frontend
           namespace: storage

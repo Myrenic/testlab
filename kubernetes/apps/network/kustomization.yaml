@@ -5,3 +5,4 @@ resources:
   - ./cloudflare-tunnel/ks.yaml
   - ./traefik/ks.yaml
   - ./ingressroutes/ks.yaml
+  - traefik-crds/
