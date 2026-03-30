@@ -13,6 +13,10 @@ permissions:
 jobs:
   renovate:
     runs-on: ubuntu-latest
+    env:
+      LOG_LEVEL: info
+      RENOVATE_REPOSITORIES: ${{ github.repository }}
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,5 +26,3 @@ jobs:
         with:
           configurationFile: renovate.json
           token: ${{ secrets.GITHUB_TOKEN }}
-        env:
-          LOG_LEVEL: info
