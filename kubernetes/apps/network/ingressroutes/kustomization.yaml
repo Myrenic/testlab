@@ -10,3 +10,4 @@ resources:
   - ./homeassistant.yaml
   - ./aiostreams.yaml
   - ./traefik.yaml
+  - ./velero-ui.yaml
