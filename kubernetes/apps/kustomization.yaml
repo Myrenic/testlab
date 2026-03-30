@@ -6,5 +6,6 @@ resources:
   - cert-manager
   - network
   - storage
+  - backup
   - services
   - auth
