@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://json.schemastore.org/kustomization
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ./certificate.yaml
+  - ./middlewares.yaml
+  - ./oauth2-proxy.yaml
+  - ./flux-operator.yaml
+  - ./longhorn.yaml
+  - ./homeassistant.yaml
+  - ./aiostreams.yaml
+  - ./traefik.yaml
+  - ./velero-ui.yaml
