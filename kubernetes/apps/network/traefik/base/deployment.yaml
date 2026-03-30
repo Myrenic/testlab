@@ -5,7 +5,11 @@ metadata:
   name: traefik
   namespace: network
 spec:
-  replicas: 1
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: traefik
@@ -15,6 +19,13 @@ spec:
         app: traefik
     spec:
       serviceAccountName: traefik-sa
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: traefik
       containers:
         - name: traefik
           image: traefik:v3.5.2
@@ -22,7 +33,6 @@ spec:
             - --log.level=INFO
             - --log.format=json
             - --api.dashboard=true
-            - --api.insecure=true
             - --entrypoints.web.address=:80
             - --entrypoints.web.http.redirections.entrypoint.to=websecure
             - --entrypoints.web.http.redirections.entrypoint.scheme=https
@@ -40,8 +50,12 @@ spec:
               name: web
             - containerPort: 443
               name: websecure
-            - containerPort: 8080
-              name: admin
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

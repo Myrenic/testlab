@@ -9,8 +9,11 @@ spec:
   routes:
     - match: Host(`traefik.${SECRET_DOMAIN_0}`)
       kind: Rule
+      middlewares:
+        - name: oauth2-proxy-auth
+          namespace: network
       services:
-        - name: traefik
-          port: 8080
+        - kind: TraefikService
+          name: api@internal
   tls:
     secretName: domain-0-prod-tls

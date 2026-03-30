@@ -6,6 +6,8 @@ metadata:
 spec:
   targetNamespace: network
   interval: 1h
+  retryInterval: 1m
+  timeout: 5m
   prune: true
   path: ./kubernetes/apps/network/cloudflare-tunnel/base
   sourceRef:

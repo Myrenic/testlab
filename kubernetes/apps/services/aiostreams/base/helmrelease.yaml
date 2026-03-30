@@ -145,14 +145,20 @@ spec:
               MAX_STREAM_EXPRESSIONS: "200"
               MAX_STREAM_EXPRESSIONS_TOTAL_CHARACTERS: "50000"
               MAX_SEL_LENGTH: "3000"
+            resources:
+              requests:
+                cpu: 50m
+                memory: 128Mi
+              limits:
+                memory: 512Mi
             securityContext:
-              runAsNonRoot: false
-              allowPrivilegeEscalation: true
+              runAsNonRoot: true
+              allowPrivilegeEscalation: false
               capabilities:
                 drop: ["ALL"]
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: false
+        runAsNonRoot: true
         runAsUser: 1000
         seccompProfile:
           type: RuntimeDefault

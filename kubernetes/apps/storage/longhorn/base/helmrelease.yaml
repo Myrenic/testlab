@@ -22,9 +22,9 @@ spec:
       retries: 3
   values:
     persistence:
-      defaultClassReplicaCount: 1
+      defaultClassReplicaCount: 2
       allowVolumeExpansion: true
-      reclaimPolicy: Delete
+      reclaimPolicy: Retain
       volumeBindingMode: Immediate
     preUpgradeChecker:
       jobEnabled: false

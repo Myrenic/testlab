@@ -20,6 +20,16 @@ spec:
       retries: 3
   values:
     fullnameOverride: oauth2-proxy
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 10m
+        memory: 64Mi
+      limits:
+        memory: 128Mi
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
     service:
       portNumber: 80
     config:

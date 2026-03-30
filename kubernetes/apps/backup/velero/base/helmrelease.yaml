@@ -52,6 +52,13 @@ spec:
       backupSyncPeriod: 1h
       defaultRepoMaintainFrequency: 24h
 
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 1Gi
+
     backupsEnabled: true
     snapshotsEnabled: false
     deployNodeAgent: true
