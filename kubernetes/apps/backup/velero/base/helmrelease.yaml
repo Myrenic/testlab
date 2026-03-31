@@ -64,17 +64,17 @@ spec:
     deployNodeAgent: true
 
     schedules:
-      weekly:
-        schedule: "0 3 * * 0"
+      daily:
+        schedule: "0 3 * * *"   # 03:00 every day
         template:
-          ttl: 720h0m0s
+          ttl: 168h0m0s         # 7 days
           storageLocation: default
           excludedNamespaces:
             - velero
       monthly:
-        schedule: "0 3 1 * *"
+        schedule: "0 3 1 * *"   # 03:00 on the 1st of every month
         template:
-          ttl: 2160h0m0s
+          ttl: 1440h0m0s        # 60 days (~2 months)
           storageLocation: default
           excludedNamespaces:
             - velero
