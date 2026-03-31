@@ -12,3 +12,4 @@ resources:
   - ./traefik.yaml
   - ./velero-ui.yaml
   - ./obsidiansync.yaml
+  - ./nexus.yaml
