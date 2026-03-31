@@ -17,10 +17,10 @@ spec:
               tag: latest
             resources:
               requests:
-                cpu: 50m
-                memory: 256Mi
+                cpu: 500m
+                memory: 3Gi
               limits:
-                memory: 1Gi
+                memory: 4Gi
             securityContext:
               runAsNonRoot: true
               allowPrivilegeEscalation: false
