@@ -26,7 +26,7 @@ flux get kustomizations --watch
 ## Restore from Backup
 
 Velero backs up to Azure Blob Storage (`velero76b1f66a064d` / container `velero`).
-Weekly backups run Sundays at 3 AM (30-day retention), monthly on the 1st (90-day retention).
+Daily backups at 3 AM (7-day retention), monthly on the 1st (60-day retention).
 
 ```bash
 # 1. Bootstrap Flux (steps 1–4 above) — Velero will be deployed automatically
@@ -48,7 +48,7 @@ velero restore describe <restore-name> --details
 ### Quick one-liner restore (latest weekly)
 
 ```bash
-velero restore create --from-schedule velero-weekly --wait
+velero restore create --from-schedule velero-daily --wait
 ```
 
 > This auto-selects the most recent completed backup from the weekly schedule.
