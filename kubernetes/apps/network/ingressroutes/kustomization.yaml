@@ -11,3 +11,4 @@ resources:
   - ./aiostreams.yaml
   - ./traefik.yaml
   - ./velero-ui.yaml
+  - ./obsidiansync.yaml
