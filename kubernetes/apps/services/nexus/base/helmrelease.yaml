@@ -1,15 +1,63 @@
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
-  name: nexus
+  name: nexusup
 spec:
   interval: 1h
   chartRef:
     kind: OCIRepository
-    name: nexus
+    name: nexusup
   values:
     controllers:
-      nexus:
+      nexusup:
+        containers:
+          app:
+            image:
+              repository: sonatype/nexus3
+              tag: latest
+            resources:
+              requests:
+                cpu: 500m
+                memory: 3Gi
+              limits:
+                memory: 4Gi
+            securityContext:
+              runAsNonRoot: true
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop: ["ALL"]
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          http:
+            port: 8081
+    persistence:
+      data:
+        type: persistentVolumeClaim
+        storageClass: longhorn
+        accessMode: ReadWriteMany
+        size: 20Gi
+        globalMounts:
+          - path: /nexus-data
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nexusdown
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: nexusdown
+  values:
+    controllers:
+      nexusdown:
         containers:
           app:
             image:
