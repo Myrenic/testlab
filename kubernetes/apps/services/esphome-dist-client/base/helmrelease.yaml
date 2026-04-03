@@ -33,9 +33,7 @@ spec:
           type: RuntimeDefault
     persistence:
       esphome-versions:
-        type: persistentVolumeClaim
-        storageClass: longhorn
-        accessMode: ReadWriteMany
-        size: 10Gi
+        type: hostPath
+        hostPath: /var/lib/esphome-versions
         globalMounts:
           - path: /esphome-versions
