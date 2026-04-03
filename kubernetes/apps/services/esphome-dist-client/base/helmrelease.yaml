@@ -18,15 +18,13 @@ spec:
               tag: 1.1.0-dev.25
             env:
               SERVER_URL: "http://10.0.100.11:8765"
+              SERVER_TOKEN: "${ESPHOME_DIST_CLIENT_SERVER_TOKEN}"
               MAX_PARALLEL_JOBS: "2"
               ESPHOME_SEED_VERSION: "2026.3.1"
               HOSTNAME:
                 valueFrom:
                   fieldRef:
                     fieldPath: spec.nodeName
-            envFrom:
-              - secretRef:
-                  name: esphome-dist-client-secret
             resources:
               requests:
                 cpu: 100m
