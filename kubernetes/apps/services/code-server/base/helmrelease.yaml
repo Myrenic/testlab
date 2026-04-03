@@ -63,7 +63,7 @@ spec:
       # Home Assistant config — shared RWX PVC from the homeassistant HelmRelease
       ha-config:
         type: persistentVolumeClaim
-        existingClaim: homeassistant-config
+        existingClaim: homeassistant
         globalMounts:
           - path: /ha-config
       # code-server's own workspace (extensions, settings, etc.)
