@@ -64,7 +64,8 @@ spec:
     deployNodeAgent: true
 
     schedules:
-      daily:
+      # Application data backup — includes PVC (filesystem backup via kopia)
+      aiostreams-daily:
         schedule: "0 3 * * *"   # 03:00 every day
         template:
           ttl: 168h0m0s         # 7 days
@@ -74,7 +75,7 @@ spec:
           labelSelector:
             matchLabels:
               app.kubernetes.io/name: aiostreams
-      monthly:
+      aiostreams-monthly:
         schedule: "0 3 1 * *"   # 03:00 on the 1st of every month
         template:
           ttl: 1440h0m0s        # 60 days (~2 months)
@@ -84,3 +85,22 @@ spec:
           labelSelector:
             matchLabels:
               app.kubernetes.io/name: aiostreams
+      # Database operator backup — K8s resources only, no raw PVC backup.
+      # CNPG Cluster data must be backed up via Barman (configured per-Cluster).
+      # Raw filesystem backup of live PostgreSQL data is unsafe and inconsistent.
+      cnpg-daily:
+        schedule: "0 3 * * *"
+        template:
+          ttl: 168h0m0s
+          storageLocation: default
+          includedNamespaces:
+            - cnpg-system
+          defaultVolumesToFsBackup: false
+      cnpg-monthly:
+        schedule: "0 3 1 * *"
+        template:
+          ttl: 1440h0m0s
+          storageLocation: default
+          includedNamespaces:
+            - cnpg-system
+          defaultVolumesToFsBackup: false
