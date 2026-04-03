@@ -69,12 +69,18 @@ spec:
         template:
           ttl: 168h0m0s         # 7 days
           storageLocation: default
-          excludedNamespaces:
-            - velero
+          includedNamespaces:
+            - services
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: aiostreams
       monthly:
         schedule: "0 3 1 * *"   # 03:00 on the 1st of every month
         template:
           ttl: 1440h0m0s        # 60 days (~2 months)
           storageLocation: default
-          excludedNamespaces:
-            - velero
+          includedNamespaces:
+            - services
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: aiostreams
