@@ -1,0 +1,75 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: code-server
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: code-server
+  values:
+    controllers:
+      code-server:
+        initContainers:
+          install-kubectl:
+            image:
+              repository: bitnami/kubectl
+              tag: latest
+            command:
+              - /bin/sh
+              - -c
+              - cp /opt/bitnami/kubectl/bin/kubectl /tools/kubectl && chmod +x /tools/kubectl
+        containers:
+          app:
+            image:
+              repository: ghcr.io/coder/code-server
+              tag: latest
+            args:
+              - --bind-addr
+              - 0.0.0.0:8080
+              - --auth
+              - password
+              - /ha-config
+            env:
+              TZ: "${TZ}"
+              PASSWORD: "${CODE_SERVER_PASSWORD}"
+            securityContext:
+              runAsUser: 0
+              runAsGroup: 0
+            resources: {}
+    defaultPodOptions:
+      serviceAccountName: code-server
+      securityContext:
+        runAsNonRoot: false
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          http:
+            port: 8080
+    persistence:
+      # Shared emptyDir: init container writes kubectl, main container gets it at /usr/local/bin
+      tools:
+        type: emptyDir
+        advancedMounts:
+          code-server:
+            install-kubectl:
+              - path: /tools
+            app:
+              - path: /usr/local/bin/kubectl
+                subPath: kubectl
+      # Home Assistant config — shared RWX PVC from the homeassistant HelmRelease
+      ha-config:
+        type: persistentVolumeClaim
+        existingClaim: homeassistant-config
+        globalMounts:
+          - path: /ha-config
+      # code-server's own workspace (extensions, settings, etc.)
+      workspace:
+        type: persistentVolumeClaim
+        storageClass: longhorn
+        accessMode: ReadWriteOnce
+        size: 2Gi
+        globalMounts:
+          - path: /home/coder

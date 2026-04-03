@@ -1,0 +1,20 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: homeassistant
+spec:
+  instances: 1
+  storage:
+    size: 5Gi
+    storageClass: longhorn
+  bootstrap:
+    initdb:
+      database: homeassistant
+      owner: homeassistant
+  inheritedMetadata:
+    annotations:
+      # Velero pre-backup hook: force a checkpoint so the filesystem
+      # backup is as consistent as possible (replaces full Barman setup).
+      pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "psql -U postgres -c CHECKPOINT"]'
+      pre.hook.backup.velero.io/container: postgres
+      pre.hook.backup.velero.io/timeout: "60s"

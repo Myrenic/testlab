@@ -1,0 +1,46 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: homeassistant
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: homeassistant
+  values:
+    controllers:
+      homeassistant:
+        containers:
+          app:
+            image:
+              repository: ghcr.io/home-assistant/home-assistant
+              tag: stable
+            env:
+              TZ: "${TZ}"
+              # Expose the CNPG connection URI so configuration.yaml can use:
+              #   recorder:
+              #     db_url: !env_var RECORDER_DB_URL
+              RECORDER_DB_URL:
+                valueFrom:
+                  secretKeyRef:
+                    name: homeassistant-app
+                    key: uri
+            resources: {}
+    defaultPodOptions:
+      securityContext:
+        runAsNonRoot: false
+        seccompProfile:
+          type: RuntimeDefault
+    service:
+      app:
+        ports:
+          http:
+            port: 8123
+    persistence:
+      homeassistant-config:
+        type: persistentVolumeClaim
+        storageClass: longhorn
+        accessMode: ReadWriteMany
+        size: 5Gi
+        globalMounts:
+          - path: /config
