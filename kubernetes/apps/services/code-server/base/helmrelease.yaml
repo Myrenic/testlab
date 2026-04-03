@@ -10,6 +10,8 @@ spec:
   values:
     controllers:
       code-server:
+        serviceAccount:
+          name: code-server
         initContainers:
           install-kubectl:
             image:
@@ -38,7 +40,6 @@ spec:
               runAsGroup: 0
             resources: {}
     defaultPodOptions:
-      serviceAccountName: code-server
       securityContext:
         runAsNonRoot: false
         seccompProfile:
