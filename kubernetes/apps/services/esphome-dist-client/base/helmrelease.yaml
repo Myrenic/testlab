@@ -17,20 +17,15 @@ spec:
               repository: ghcr.io/weirded/esphome-dist-client
               tag: 1.0.0
             env:
-              SERVER_URL: "http://10.0.100.11:8765"
+              SERVER_URL: "${ESPHOME_DIST_CLIENT_SERVER_URL}"
               SERVER_TOKEN: "${ESPHOME_DIST_CLIENT_SERVER_TOKEN}"
               MAX_PARALLEL_JOBS: "2"
-              ESPHOME_SEED_VERSION: "2026.3.1"
+              ESPHOME_SEED_VERSION: "${ESPHOME_DIST_CLIENT_SEED_VERSION}"
               HOSTNAME:
                 valueFrom:
                   fieldRef:
                     fieldPath: spec.nodeName
-            resources:
-              requests:
-                cpu: 100m
-                memory: 256Mi
-              limits:
-                memory: 2Gi
+            resources: {}
     defaultPodOptions:
       securityContext:
         runAsNonRoot: false
@@ -38,7 +33,9 @@ spec:
           type: RuntimeDefault
     persistence:
       esphome-versions:
-        type: hostPath
-        hostPath: /var/lib/esphome-versions
+        type: persistentVolumeClaim
+        storageClass: longhorn
+        accessMode: ReadWriteMany
+        size: 10Gi
         globalMounts:
           - path: /esphome-versions
