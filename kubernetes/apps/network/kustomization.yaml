@@ -6,4 +6,5 @@ resources:
   - ./ingressroutes/ks.yaml
   - traefik-crds/
   - ./metallb
+  - ./adguard-home
   - ./metallb-pool
