@@ -31,6 +31,7 @@ data:
       local_ptr_upstreams:
         - 10.0.69.1
       cache_size: 4194304
+      cache_enabled: true
       ratelimit: 20
       rewrites: []
       blocked_hosts:
@@ -46,6 +47,8 @@ data:
       safe_search:
         enabled: false
       rewrites: []
+      safe_fs_patterns:
+        - /opt/adguardhome/work/userfilters/*
     querylog:
       enabled: true
       # Keep a longer retention window to provide DNS history for homelab troubleshooting.
@@ -65,4 +68,4 @@ data:
       compress: false
       local_time: false
       verbose: false
-    schema_version: 28
+    schema_version: 30

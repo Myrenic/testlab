@@ -12,6 +12,20 @@ spec:
       adguard-home:
         type: daemonset
         strategy: RollingUpdate
+        initContainers:
+          copy-config:
+            image:
+              repository: busybox
+              tag: latest
+            command:
+              - /bin/sh
+              - -c
+              - cp /configmap/AdGuardHome.yaml /conf/AdGuardHome.yaml
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - ALL
         containers:
           app:
             image:
@@ -112,10 +126,18 @@ spec:
         name: adguard-home-config
         advancedMounts:
           adguard-home:
-            app:
-              - path: /opt/adguardhome/conf/AdGuardHome.yaml
+            copy-config:
+              - path: /configmap/AdGuardHome.yaml
                 subPath: AdGuardHome.yaml
                 readOnly: true
+      conf-dir:
+        type: emptyDir
+        advancedMounts:
+          adguard-home:
+            copy-config:
+              - path: /conf
+            app:
+              - path: /opt/adguardhome/conf
       work:
         type: emptyDir
         advancedMounts:
