@@ -87,6 +87,7 @@ spec:
         controller: adguard-home
         type: LoadBalancer
         annotations:
+          # Reserved MetalLB VIP used by UniFi and LAN clients as the shared DNS entrypoint.
           metallb.io/loadBalancerIPs: 10.0.69.99
         externalTrafficPolicy: Local
         ports:

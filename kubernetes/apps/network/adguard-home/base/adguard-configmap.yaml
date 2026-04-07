@@ -10,6 +10,7 @@ data:
       session_ttl: 720h
     users:
       - name: admin
+        # Must be a bcrypt hash (e.g. $2a$, $2b$, $2y$) provided via cluster-secrets.
         password: "${ADGUARD_ADMIN_PASSWORD_BCRYPT}"
     dns:
       bind_hosts:
@@ -47,6 +48,7 @@ data:
       rewrites: []
     querylog:
       enabled: true
+      # Keep a longer retention window to provide DNS history for homelab troubleshooting.
       interval: 2160h
     stats:
       enabled: true
