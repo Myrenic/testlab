@@ -50,10 +50,17 @@ spec:
                 memory: 256Mi
               limits:
                 memory: 512Mi
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                add:
+                  - NET_BIND_SERVICE
+                drop:
+                  - ALL
     defaultPodOptions:
       securityContext:
-        runAsNonRoot: false
-        runAsUser: 0
+        runAsNonRoot: true
+        runAsUser: 10001
         seccompProfile:
           type: RuntimeDefault
       topologySpreadConstraints:
@@ -79,7 +86,8 @@ spec:
       dns-lan:
         controller: adguard-home
         type: LoadBalancer
-        loadBalancerIP: 10.0.69.99
+        annotations:
+          metallb.io/loadBalancerIPs: 10.0.69.99
         externalTrafficPolicy: Local
         ports:
           dns-tcp:
