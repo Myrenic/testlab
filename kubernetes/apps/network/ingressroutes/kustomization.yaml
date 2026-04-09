@@ -14,5 +14,6 @@ resources:
   - ./velero-ui.yaml
   - ./obsidiansync.yaml
   - ./nexus.yaml
-  - ./code-server.yaml
+  - ./coder.yaml
+  - ./pihole-traefikservice.yaml
   - ./pihole.yaml

@@ -8,5 +8,6 @@ resources:
   - storage
   - backup
   - database
+  - dev-platform
   - services
   - auth

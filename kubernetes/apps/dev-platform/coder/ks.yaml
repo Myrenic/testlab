@@ -1,15 +1,15 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: code-server
+  name: coder
   namespace: flux-system
 spec:
-  targetNamespace: services
+  targetNamespace: dev-platform
   interval: 1h
   retryInterval: 1m
   timeout: 5m
   prune: true
-  path: ./kubernetes/apps/services/code-server/base
+  path: ./kubernetes/apps/dev-platform/coder/base
   sourceRef:
     kind: GitRepository
     name: flux-system
@@ -19,5 +19,6 @@ spec:
       - kind: Secret
         name: cluster-secrets
   dependsOn:
-    - name: homeassistant
-  wait: false
+    - name: cloudnative-pg
+    - name: longhorn
+  wait: true
