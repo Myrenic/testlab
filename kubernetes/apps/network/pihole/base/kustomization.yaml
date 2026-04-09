@@ -5,6 +5,7 @@ resources:
   - ./ocirepository.yaml
   - ./custom-dns-configmap.yaml
   - ./nodeport-service.yaml
+  - ./web-primary-service.yaml
   - ./nebula-sync-secret.yaml
   - ./helmrelease.yaml
   - ./nebula-sync.yaml

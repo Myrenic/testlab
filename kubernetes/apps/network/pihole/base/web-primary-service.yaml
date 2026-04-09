@@ -1,0 +1,25 @@
+# Routes all admin UI traffic to control10's pihole pod only.
+# Uses the stable node IP (10.0.69.10) + NodePort 30080 with externalTrafficPolicy:Local,
+# which guarantees the request always reaches the pod on control10 — no session stickiness needed.
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-web-primary
+  namespace: network
+spec:
+  ports:
+    - port: 80
+      targetPort: 30080
+      protocol: TCP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: pihole-web-primary
+  namespace: network
+subsets:
+  - addresses:
+      - ip: 10.0.69.10
+    ports:
+      - port: 30080
+        protocol: TCP

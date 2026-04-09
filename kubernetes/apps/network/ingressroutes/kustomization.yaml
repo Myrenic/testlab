@@ -15,5 +15,4 @@ resources:
   - ./obsidiansync.yaml
   - ./nexus.yaml
   - ./code-server.yaml
-  - ./pihole-traefikservice.yaml
   - ./pihole.yaml

@@ -9,9 +9,12 @@ spec:
   routes:
     - match: Host(`pihole.${SECRET_DOMAIN_0}`)
       kind: Rule
-      services:
-        - name: pihole-sticky
+      middlewares:
+        - name: oauth2-proxy-auth
           namespace: network
-          kind: TraefikService
+      services:
+        - name: pihole-web-primary
+          namespace: network
+          port: 80
   tls:
     secretName: domain-0-prod-tls
