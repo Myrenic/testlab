@@ -13,8 +13,8 @@ spec:
         - name: oauth2-proxy-auth
           namespace: network
       services:
-        - name: pihole-web
+        - name: pihole-sticky
           namespace: network
-          port: 80
+          kind: TraefikService
   tls:
     secretName: domain-0-prod-tls
