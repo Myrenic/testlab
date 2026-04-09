@@ -21,8 +21,10 @@ spec:
     remediation:
       retries: 3
   values:
+    defaultSettings:
+      defaultReplicaCount: 1
     persistence:
-      defaultClassReplicaCount: 2
+      defaultClassReplicaCount: 1
       allowVolumeExpansion: true
       reclaimPolicy: Retain
       volumeBindingMode: Immediate
