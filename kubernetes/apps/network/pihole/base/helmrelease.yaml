@@ -10,8 +10,7 @@ spec:
   values:
     controllers:
       pihole:
-        type: statefulset
-        replicas: 3
+        type: daemonset
         containers:
           app:
             image:
@@ -110,10 +109,11 @@ spec:
             targetPort: 80
     persistence:
       pihole-data:
-        type: persistentVolumeClaim
-        accessMode: ReadWriteOnce
-        size: 1Gi
-        storageClass: longhorn
+        type: custom
+        volumeSpec:
+          hostPath:
+            path: /var/lib/pihole
+            type: DirectoryOrCreate
         advancedMounts:
           pihole:
             app:
