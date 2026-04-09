@@ -110,10 +110,12 @@ spec:
             targetPort: 80
     persistence:
       pihole-data:
-        type: hostPath
-        hostPathType: DirectoryOrCreate
-        # Persists gravity DB, settings, and query logs across pod restarts on each node.
-        path: /var/lib/pihole
+        type: custom
+        volumeSpec:
+          hostPath:
+            # Persists gravity DB, settings, and query logs across pod restarts on each node.
+            path: /var/lib/pihole
+            type: DirectoryOrCreate
         advancedMounts:
           pihole:
             app:
