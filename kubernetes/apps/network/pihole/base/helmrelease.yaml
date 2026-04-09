@@ -10,8 +10,8 @@ spec:
   values:
     controllers:
       pihole:
-        type: daemonset
-        strategy: RollingUpdate
+        type: statefulset
+        replicas: 3
         containers:
           app:
             image:
@@ -110,12 +110,10 @@ spec:
             targetPort: 80
     persistence:
       pihole-data:
-        type: custom
-        volumeSpec:
-          hostPath:
-            # Persists gravity DB, settings, and query logs across pod restarts on each node.
-            path: /var/lib/pihole
-            type: DirectoryOrCreate
+        type: persistentVolumeClaim
+        accessMode: ReadWriteOnce
+        size: 1Gi
+        storageClass: longhorn
         advancedMounts:
           pihole:
             app:
