@@ -1,0 +1,16 @@
+{
+  "name": "testlab-kubernetes",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "set -euxo pipefail; ARCH=$(dpkg --print-architecture); case \"$ARCH\" in amd64) TOOL_ARCH=amd64 ;; arm64) TOOL_ARCH=arm64 ;; *) echo \"Unsupported architecture: $ARCH\"; exit 1 ;; esac; sudo apt-get update; sudo apt-get install -y --no-install-recommends age ca-certificates curl jq tar; if ! command -v kubectl >/dev/null 2>&1; then KUBECTL_VERSION=$(curl -fsSL https://dl.k8s.io/release/stable.txt); curl -fsSL \"https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${TOOL_ARCH}/kubectl\" -o /tmp/kubectl; sudo install -m 0755 /tmp/kubectl /usr/local/bin/kubectl; fi; if ! command -v kustomize >/dev/null 2>&1; then KUSTOMIZE_VERSION=v5.7.1; curl -fsSL \"https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}/kustomize_${KUSTOMIZE_VERSION}_linux_${TOOL_ARCH}.tar.gz\" -o /tmp/kustomize.tar.gz; tar -xzf /tmp/kustomize.tar.gz -C /tmp; sudo install -m 0755 /tmp/kustomize /usr/local/bin/kustomize; fi; if ! command -v helm >/dev/null 2>&1; then HELM_VERSION=v3.18.3; curl -fsSL \"https://get.helm.sh/helm-${HELM_VERSION}-linux-${TOOL_ARCH}.tar.gz\" -o /tmp/helm.tar.gz; tar -xzf /tmp/helm.tar.gz -C /tmp; sudo install -m 0755 \"/tmp/linux-${TOOL_ARCH}/helm\" /usr/local/bin/helm; fi; if ! command -v flux >/dev/null 2>&1; then curl -fsSL https://fluxcd.io/install.sh | sudo bash; fi; if ! command -v sops >/dev/null 2>&1; then SOPS_VERSION=v3.10.2; curl -fsSL \"https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.${TOOL_ARCH}\" -o /tmp/sops; sudo install -m 0755 /tmp/sops /usr/local/bin/sops; fi; if ! command -v velero >/dev/null 2>&1; then VELERO_VERSION=v1.17.0; curl -fsSL \"https://github.com/vmware-tanzu/velero/releases/download/${VELERO_VERSION}/velero-${VELERO_VERSION}-linux-${TOOL_ARCH}.tar.gz\" -o /tmp/velero.tar.gz; tar -xzf /tmp/velero.tar.gz -C /tmp; sudo install -m 0755 \"/tmp/velero-${VELERO_VERSION}-linux-${TOOL_ARCH}/velero\" /usr/local/bin/velero; fi; rm -f /tmp/kubectl /tmp/kustomize /tmp/kustomize.tar.gz /tmp/helm.tar.gz /tmp/sops /tmp/velero.tar.gz; rm -rf /tmp/linux-amd64 /tmp/linux-arm64 /tmp/velero-v1.17.0-linux-amd64 /tmp/velero-v1.17.0-linux-arm64",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "redhat.vscode-yaml",
+        "ms-kubernetes-tools.vscode-kubernetes-tools"
+      ]
+    }
+  }
+}
