@@ -49,6 +49,10 @@ spec:
         enable: false
       serviceAccount:
         workspacePerms: true
+      securityContext:
+        capabilities:
+          drop:
+            - ALL
       resources:
         requests:
           cpu: 100m
