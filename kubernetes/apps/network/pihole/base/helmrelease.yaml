@@ -24,6 +24,8 @@ spec:
               FTLCONF_dns_upstreams: "1.1.1.1;9.9.9.9"
               # Forward .lan domain and set up reverse DNS for the LAN range via the router.
               FTLCONF_dns_revServers: "true,10.0.69.0/24,10.0.69.1,lan"
+              # Required to prevent FTL from dropping to non-root before setting capabilities.
+              DNSMASQ_USER: root
             probes:
               liveness:
                 enabled: true
