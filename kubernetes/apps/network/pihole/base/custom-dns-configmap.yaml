@@ -4,7 +4,7 @@ metadata:
   name: pihole-custom-dns
   namespace: network
 data:
-  custom.conf: |
+  02-custom.conf: |
     # Forward .lan hostnames to the router DNS for DHCP-registered devices.
     server=/lan/10.0.69.1
     # Reverse lookups for LAN range via the router.
