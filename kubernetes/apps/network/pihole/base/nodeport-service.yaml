@@ -1,0 +1,19 @@
+# Exposes each Pi-hole pod individually on its node's IP for nebula-sync targeting.
+# externalTrafficPolicy: Local ensures that nodeIP:30080 routes only to the pod on that node,
+# which makes control10 (10.0.69.10) the stable primary and the others stable replicas.
+apiVersion: v1
+kind: Service
+metadata:
+  name: pihole-web-nodeport
+  namespace: network
+spec:
+  type: NodePort
+  externalTrafficPolicy: Local
+  selector:
+    app.kubernetes.io/name: pihole
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+      protocol: TCP

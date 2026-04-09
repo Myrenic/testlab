@@ -1,7 +1,7 @@
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: OCIRepository
 metadata:
-  name: adguard-home
+  name: pihole
 spec:
   interval: 15m
   layerSelector:

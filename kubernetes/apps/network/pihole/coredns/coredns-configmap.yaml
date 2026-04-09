@@ -20,8 +20,8 @@ data:
           fallthrough
         }
         prometheus :9153
-        # Keep this service name aligned with `service.dns-cluster` in the AdGuard HelmRelease.
-        forward . adguard-home-dns-cluster.network.svc.cluster.local {
+        # Keep this service name aligned with `service.dns-cluster` in the Pi-hole HelmRelease.
+        forward . pihole-dns-cluster.network.svc.cluster.local {
           max_concurrent 1000
         }
         cache 30

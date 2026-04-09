@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: nebula-sync
+  namespace: network
+spec:
+  # Sync every hour so changes made on the primary (control10) propagate quickly.
+  schedule: "0 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: nebula-sync
+              image: ghcr.io/lovelaze/nebula-sync:v0.11.1
+              envFrom:
+                - secretRef:
+                    name: nebula-sync-secret
+              env:
+                - name: FULL_SYNC
+                  value: "true"
+                - name: RUN_GRAVITY
+                  value: "true"
+                - name: TZ
+                  value: "${TZ}"
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL
+                readOnlyRootFilesystem: true
+                runAsNonRoot: true
+                runAsUser: 65534
+          restartPolicy: OnFailure
+          securityContext:
+            seccompProfile:
+              type: RuntimeDefault
