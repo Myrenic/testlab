@@ -24,6 +24,7 @@ spec:
     defaultSettings:
       autoSalvage: true
       defaultReplicaCount: 3
+      nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
       replicaAutoBalance: best-effort
     persistence:
       defaultClassReplicaCount: 3
