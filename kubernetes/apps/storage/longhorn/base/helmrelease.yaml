@@ -22,9 +22,11 @@ spec:
       retries: 3
   values:
     defaultSettings:
-      defaultReplicaCount: 1
+      autoSalvage: true
+      defaultReplicaCount: 3
+      replicaAutoBalance: best-effort
     persistence:
-      defaultClassReplicaCount: 1
+      defaultClassReplicaCount: 3
       allowVolumeExpansion: true
       reclaimPolicy: Retain
       volumeBindingMode: Immediate

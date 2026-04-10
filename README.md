@@ -23,6 +23,43 @@ kustomize build ./kubernetes/apps/flux-system/flux-instance | kubectl apply -f -
 flux get kustomizations --watch
 ```
 
+## HA PDCA Loop
+
+Target for this homelab is not strict 100% uptime; it is predictable self-healing after failures.
+
+- **Plan (weekly + after major changes):** pick 2-3 critical apps, confirm Longhorn replica policy matches risk, and ensure Velero backups are recent (`velero backup get`).
+- **Do (monthly drill):** run the 2-of-3 node failure drill below and capture timing/results in your ops notes.
+- **Check (after each drill/change):** verify Flux reconciliation is clean, Longhorn volumes rebuild, and critical apps recover without manual YAML edits.
+- **Act (same day):** adjust Helm values/replica placement/backup schedules, commit to Git, and let Flux apply. Re-run the drill on the next cadence.
+
+Repeat cadence: **weekly Plan/Check**, **monthly Do drill**, and **immediately after cluster/storage/network upgrades**.
+
+### Failure drill: 2 of 3 nodes unavailable
+
+1. **Pre-check**
+   - `kubectl get nodes`
+   - `flux get kustomizations -A`
+   - `velero backup get | head`
+   - Confirm at least one stateless app and one stateful app (Longhorn PVC) are healthy.
+2. **Create a restore point**
+   - `velero backup create pre-ha-drill-$(date +%Y%m%d%H%M) --wait`
+3. **Simulate failure**
+   - Pick two nodes to take offline.
+   - `kubectl cordon <node-a> <node-b>`
+   - `kubectl drain <node-a> <node-b> --ignore-daemonsets --delete-emptydir-data --force`
+   - Power off or disconnect both nodes.
+4. **Continuity expectation (realistic homelab)**
+   - Some apps may be briefly unavailable; core ingress/DNS/Flux should recover on the surviving node.
+   - Expect degraded capacity/performance, but no prolonged manual babysitting for healthy workloads.
+5. **Verify self-healing (10-15 min window)**
+   - `kubectl get pods -A -o wide`
+   - `kubectl get volumes -n longhorn-system`
+   - Check critical app endpoints and confirm Flux is still reconciling.
+6. **Rollback / recovery**
+   - Power nodes back on, then `kubectl uncordon <node-a> <node-b>`.
+   - Wait for Longhorn replica rebuild and pods to rebalance.
+   - If a stateful app does not recover automatically, use the app restore procedure in **Restore an individual app**.
+
 ## Restore from Backup
 
 Velero backs up to Azure Blob Storage (`velero76b1f66a064d` / container `velero`).
