@@ -7,4 +7,5 @@ resources:
   - ./helmrelease.yaml
   - ./grafana-dashboard-overview.yaml
   - ./prometheusrule-cluster-scaling.yaml
+  - ./prometheusrule-ingress-health.yaml
   - ./prometheusrule-velero.yaml

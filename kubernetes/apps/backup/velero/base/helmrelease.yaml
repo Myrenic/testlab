@@ -21,6 +21,8 @@ spec:
     remediation:
       retries: 3
   postRenderers:
+    # Keep placement rules on the Deployment only. Chart-level affinity is inherited by
+    # upgrade hooks, which can deadlock Flux rollouts in a small cluster.
     - kustomize:
         patches:
           - target:
@@ -36,13 +38,25 @@ spec:
                   type: RollingUpdate
                   rollingUpdate:
                     maxSurge: 1
-                    maxUnavailable: 0
+                    maxUnavailable: 1
+              - op: add
+                path: /spec/template/spec/affinity
+                value:
+                  podAntiAffinity:
+                    preferredDuringSchedulingIgnoredDuringExecution:
+                      - weight: 100
+                        podAffinityTerm:
+                          topologyKey: kubernetes.io/hostname
+                          labelSelector:
+                            matchLabels:
+                              app.kubernetes.io/name: velero
+                              app.kubernetes.io/instance: velero
               - op: add
                 path: /spec/template/spec/topologySpreadConstraints
                 value:
                   - maxSkew: 1
                     topologyKey: kubernetes.io/hostname
-                    whenUnsatisfiable: DoNotSchedule
+                    whenUnsatisfiable: ScheduleAnyway
                     labelSelector:
                       matchLabels:
                         app.kubernetes.io/name: velero
@@ -78,6 +92,10 @@ spec:
       uploaderType: kopia
       backupSyncPeriod: 15m
       defaultRepoMaintainFrequency: 24h
+      repositoryMaintenanceJob:
+        repositoryConfigData:
+          global:
+            keepLatestMaintenanceJobs: 3
 
     resources:
       requests:
@@ -85,15 +103,6 @@ spec:
         memory: 256Mi
       limits:
         memory: 1Gi
-
-    affinity:
-      podAntiAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          - topologyKey: kubernetes.io/hostname
-            labelSelector:
-              matchLabels:
-                app.kubernetes.io/name: velero
-                app.kubernetes.io/instance: velero
 
     extraObjects:
       - apiVersion: policy/v1

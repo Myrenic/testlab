@@ -69,6 +69,7 @@ data:
       namespace: ${PROBE_NAMESPACE}
       labels:
         app.kubernetes.io/name: ingress-health
+        release: kube-prometheus-stack
     spec:
       jobName: ingress-health
       interval: 1m

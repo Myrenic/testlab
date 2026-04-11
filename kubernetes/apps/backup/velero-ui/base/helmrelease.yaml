@@ -19,14 +19,23 @@ spec:
     remediation:
       retries: 3
   values:
+    # Chart 0.14.0 creates the passphrase secret and policy ConfigMap but does not
+    # wire them into the Deployment; inject them explicitly here.
     configuration:
       general:
         veleroNamespace: velero
         secretPassPhrase:
           useSecret: true
-          value: "velero-ui-testlab-jwt-passphrase"
+          existingSecret: velero-ui-passphrase
+      policies:
+        enabled: true
 
     env:
+      - name: AUTH_SECRET_PASSPHRASE
+        valueFrom:
+          secretKeyRef:
+            name: velero-ui-passphrase
+            key: pass_phrase
       - name: BASIC_AUTH_ENABLED
         value: "false"
 
