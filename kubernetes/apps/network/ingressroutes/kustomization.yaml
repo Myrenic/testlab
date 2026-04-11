@@ -16,3 +16,4 @@ resources:
   - ./nexus.yaml
   - ./coder.yaml
   - ./pihole.yaml
+  - ./grafana.yaml
