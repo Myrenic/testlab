@@ -11,3 +11,4 @@ resources:
   - dev-platform
   - services
   - auth
+  - monitoring

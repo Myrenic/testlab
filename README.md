@@ -63,7 +63,9 @@ Repeat cadence: **weekly Plan/Check**, **monthly Do drill**, and **immediately a
 ## Restore from Backup
 
 Velero backs up to Azure Blob Storage (`velero76b1f66a064d` / container `velero`).
-Daily backups at 3 AM (7-day retention), monthly on the 1st (60-day retention).
+Daily backups are staggered at 03:00, 03:20, and 03:40 (7-day retention).
+Monthly backups are staggered at 05:00, 05:20, and 05:40 on the 1st (60-day retention).
+Backup operations are available in the Velero UI via `https://backups.${SECRET_DOMAIN_0}` (OAuth2-protected).
 
 ### Restore an individual app (e.g. aiostreams)
 
@@ -115,21 +117,23 @@ flux resume helmrelease $APP -n $NS
 
 ### Troubleshooting restore issues
 
-**Restore stuck in `New` phase — velero pod restart required**
+**Restore stuck in `New` phase (rare)**
 
-If a restore stays in `New` for more than ~2 minutes with no activity in
-`kubectl logs -n velero deployment/velero`, restart the velero pod:
+If a restore stays in `New` for more than ~5 minutes with no activity in
+`kubectl logs -n velero deployment/velero`, recycle the deployment:
 
 ```bash
 kubectl rollout restart deployment/velero -n velero
 ```
 
-The new pod picks up in-flight `New` restores immediately.
+The new pods pick up in-flight `New` restores immediately.
 
 **BSL shows `Unavailable` (`input/output error` writing credentials)**
 
 The Azure plugin writes a temp credential file to `/tmp` inside the velero container.
-A node restart or stale pod can leave the container in a bad state. Restart the pod:
+A node restart or stale pod can leave a replica in a bad state. Velero now runs with
+two replicas and anti-affinity, so this usually self-recovers. If BSL is still not
+`Available` after ~10 minutes, restart the deployment:
 
 ```bash
 kubectl rollout restart deployment/velero -n velero

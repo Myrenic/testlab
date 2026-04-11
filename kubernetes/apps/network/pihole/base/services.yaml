@@ -18,6 +18,7 @@ metadata:
   name: pihole-dns-cluster
   namespace: network
 spec:
+  clusterIP: 10.107.156.12
   selector:
     app.kubernetes.io/name: pihole
   ports:
