@@ -62,6 +62,11 @@ spec:
                         app.kubernetes.io/name: velero
                         app.kubernetes.io/instance: velero
   values:
+    # Flux manages CRD updates via upgrade.crds: CreateReplace; disable the
+    # chart's own pre-upgrade hook job to prevent it from dead-locking on
+    # small clusters where affinity/scheduling can cause it to time out.
+    upgradeCRDs: false
+
     credentials:
       useSecret: true
       existingSecret: velero-credentials
