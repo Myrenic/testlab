@@ -12,6 +12,7 @@ spec:
         kind: HelmRepository
         name: otwld
       interval: 15m
+  timeout: 10m
   install:
     remediation:
       retries: 3
@@ -53,6 +54,14 @@ spec:
         memory: 64Mi
       limits:
         memory: 128Mi
+
+    # NestJS startup takes 60–90 s; give the liveness probe enough headroom
+    # so the container is not killed before the app binds to port 3000.
+    livenessProbe:
+      initialDelaySeconds: 120
+
+    readinessProbe:
+      initialDelaySeconds: 60
 
     service:
       type: ClusterIP
