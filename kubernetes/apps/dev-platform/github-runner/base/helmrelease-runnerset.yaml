@@ -25,6 +25,8 @@ spec:
       - infra-runner
     template:
       spec:
+        securityContext:
+          fsGroup: 1001
         containers:
           - name: runner
             image: ghcr.io/actions/actions-runner:latest
@@ -43,6 +45,8 @@ spec:
               - name: sops-age
                 mountPath: /etc/sops-age
                 readOnly: true
+              - name: tofu-state
+                mountPath: /runner-state
         volumes:
           - name: sops-age
             secret:
@@ -50,3 +54,6 @@ spec:
               items:
                 - key: age.agekey
                   path: age.agekey
+          - name: tofu-state
+            persistentVolumeClaim:
+              claimName: infra-runner-tofu-state

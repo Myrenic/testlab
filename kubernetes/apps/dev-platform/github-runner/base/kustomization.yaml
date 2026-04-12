@@ -4,5 +4,6 @@ kind: Kustomization
 resources:
   - ./ocirepository-controller.yaml
   - ./ocirepository-runnerset.yaml
+  - ./pvc-tofu-state.yaml
   - ./helmrelease-controller.yaml
   - ./helmrelease-runnerset.yaml

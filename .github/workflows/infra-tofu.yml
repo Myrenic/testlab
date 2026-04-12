@@ -18,6 +18,7 @@ jobs:
     env:
       TF_IN_AUTOMATION: "true"
       SOPS_AGE_KEY_FILE: /etc/sops-age/age.agekey
+      TOFU_STATE_PATH: /runner-state/helios.tfstate
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,11 +109,11 @@ jobs:
         run: |
           set -euo pipefail
           sops exec-file --filename infra.json terraform/infra.json \
-            'tofu -chdir=terraform/helios plan -input=false -var-file={}'
+            'tofu -chdir=terraform/helios plan -input=false -state=/runner-state/helios.tfstate -var-file={}'
 
       - name: OpenTofu apply
         shell: bash
         run: |
           set -euo pipefail
           sops exec-file --filename infra.json terraform/infra.json \
-            'tofu -chdir=terraform/helios apply -input=false -auto-approve -var-file={}'
+            'tofu -chdir=terraform/helios apply -input=false -state=/runner-state/helios.tfstate -auto-approve -var-file={}'
