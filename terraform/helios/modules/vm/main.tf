@@ -39,7 +39,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
   disk {
     datastore_id = each.value.datastore_id
     file_id      = var.image_ids[each.value.node_name]
-    file_format  = "qcow2"
+    file_format  = "raw"
     interface    = "virtio0"
     size         = each.value.disk_size
     discard      = "on"
