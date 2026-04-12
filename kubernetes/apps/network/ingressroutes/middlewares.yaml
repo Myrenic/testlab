@@ -40,7 +40,7 @@ spec:
       name: oauth2-proxy
       namespace: auth
       port: 80
-    query: "/oauth2/sign_in"
+    query: "/oauth2/start?rd={url}"
 
 ---
 # Chain: errors wraps forwardAuth so 401 triggers auto-redirect
