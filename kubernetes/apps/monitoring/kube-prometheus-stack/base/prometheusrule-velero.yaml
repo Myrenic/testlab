@@ -61,7 +61,7 @@ spec:
             severity: warning
           annotations:
             summary: Velero Kopia maintenance job failed
-            description: Velero maintenance job {{ $labels.job_name }} failed within the last 6 hours (reason: {{ $labels.reason }}).
+            description: 'Velero maintenance job {{ $labels.job_name }} failed within the last 6 hours (reason: {{ $labels.reason }}).'
         - alert: VeleroUIUnavailable
           expr: |
             kube_deployment_spec_replicas{namespace="velero", deployment="velero-ui"} > 0
