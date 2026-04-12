@@ -14,9 +14,9 @@ module "vm" {
 }
 
 module "talos" {
-  source = "./modules/talos"
-  hosts  = var.hosts
-  talos  = var.talos
+  source            = "./modules/talos"
+  hosts             = var.hosts
+  talos             = var.talos
   control_plane_ips = module.vm.control_plane_ips
   worker_ips        = module.vm.worker_ips
   depends_on        = [module.vm]

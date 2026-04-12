@@ -1,10 +1,10 @@
 terraform {
   required_providers {
     proxmox = {
-      source  = "bpg/proxmox"
+      source = "bpg/proxmox"
     }
     ansible = {
-      source  = "ansible/ansible"
+      source = "ansible/ansible"
     }
   }
 }

@@ -1,6 +1,6 @@
 locals {
   config_patches = [for f in sort(fileset("${path.root}/../talos/patches", "*.yaml")) :
-    file("${path.root}/../talos/patches/${f}")]
+  file("${path.root}/../talos/patches/${f}")]
 
   vip_patch = yamlencode({
     machine = {

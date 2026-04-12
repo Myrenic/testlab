@@ -91,9 +91,9 @@ resource "ansible_playbook" "deploy_apps" {
   playbook = "playbook.yaml"
 
   extra_vars = {
-    ansible_host                = split("/", each.value.initialization[0].ip_config[0].ipv4[0].address)[0]
-    ansible_user                = "ubuntu"
-    ansible_ssh_extra_args      = "-o StrictHostKeyChecking=no -o PreferredAuthentications=password"
+    ansible_host           = split("/", each.value.initialization[0].ip_config[0].ipv4[0].address)[0]
+    ansible_user           = "ubuntu"
+    ansible_ssh_extra_args = "-o StrictHostKeyChecking=no -o PreferredAuthentications=password"
   }
 
   replayable = true
