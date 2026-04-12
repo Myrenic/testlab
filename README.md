@@ -23,6 +23,19 @@ kustomize build ./kubernetes/apps/flux-system/flux-instance | kubectl apply -f -
 flux get kustomizations --watch
 ```
 
+## Infra automation runner
+
+OpenTofu automation runs on a self-hosted GitHub Actions runner deployed in-cluster by Flux (`kubernetes/apps/dev-platform/github-runner`).
+
+Create the GitHub token secret used by ARC (runner registration/auth) in `flux-system`:
+
+```bash
+kubectl -n flux-system create secret generic arc-github-auth \
+  --from-literal=github_token='<github_pat_with_repo_admin_scope>'
+```
+
+The runner mounts `sops-age` directly from `flux-system`, so `terraform/infra.json` decryption stays in-cluster and does not require passing the age key through GitHub secrets.
+
 ## HA PDCA Loop
 
 Target for this homelab is not strict 100% uptime; it is predictable self-healing after failures.

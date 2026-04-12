@@ -1,0 +1,112 @@
+name: Infra OpenTofu
+
+on:
+  push:
+    paths:
+      - terraform/**
+      - .github/workflows/infra-tofu.yml
+  workflow_dispatch:
+
+concurrency:
+  group: infra-tofu-main
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate OpenTofu stacks
+    runs-on: infra-runner
+    env:
+      TF_IN_AUTOMATION: "true"
+      SOPS_AGE_KEY_FILE: /etc/sops-age/age.agekey
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install OpenTofu and SOPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+
+          TOFU_VERSION="1.10.6"
+          curl -fsSL "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C "$HOME/.local/bin" tofu
+          chmod +x "$HOME/.local/bin/tofu"
+
+          SOPS_VERSION="3.11.0"
+          curl -fsSL "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.amd64" \
+            -o "$HOME/.local/bin/sops"
+          chmod +x "$HOME/.local/bin/sops"
+
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Validate root stacks
+        shell: bash
+        run: |
+          set -euo pipefail
+          for stack in terraform/helios terraform/atlas; do
+            tofu -chdir="$stack" fmt -check -recursive
+            tofu -chdir="$stack" init -backend=false -input=false
+            tofu -chdir="$stack" validate
+          done
+
+  apply:
+    name: Apply helios infra
+    if: github.event_name == 'push'
+    needs:
+      - validate
+    runs-on: infra-runner
+    env:
+      TF_IN_AUTOMATION: "true"
+      SOPS_AGE_KEY_FILE: /etc/sops-age/age.agekey
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install OpenTofu and SOPS
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+
+          TOFU_VERSION="1.10.6"
+          curl -fsSL "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C "$HOME/.local/bin" tofu
+          chmod +x "$HOME/.local/bin/tofu"
+
+          SOPS_VERSION="3.11.0"
+          curl -fsSL "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}/sops-v${SOPS_VERSION}.linux.amd64" \
+            -o "$HOME/.local/bin/sops"
+          chmod +x "$HOME/.local/bin/sops"
+
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Proxmox endpoint reachability
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROXMOX_URL="$(sops decrypt terraform/infra.json | sed -nE 's/.*"url"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' | head -n1)"
+          [ -n "$PROXMOX_URL" ]
+
+          HOSTPORT="$(echo "$PROXMOX_URL" | sed -E 's#^[a-z]+://([^/@]+@)?([^/]+).*$#\2#')"
+          HOST="${HOSTPORT%%:*}"
+          PORT="${HOSTPORT##*:}"
+          if [ "$HOST" = "$PORT" ]; then
+            PORT=443
+          fi
+
+          timeout 5 bash -c "</dev/tcp/${HOST}/${PORT}"
+
+      - name: OpenTofu plan
+        shell: bash
+        run: |
+          set -euo pipefail
+          sops exec-file --filename infra.json terraform/infra.json \
+            'tofu -chdir=terraform/helios plan -input=false -var-file={}'
+
+      - name: OpenTofu apply
+        shell: bash
+        run: |
+          set -euo pipefail
+          sops exec-file --filename infra.json terraform/infra.json \
+            'tofu -chdir=terraform/helios apply -input=false -auto-approve -var-file={}'
