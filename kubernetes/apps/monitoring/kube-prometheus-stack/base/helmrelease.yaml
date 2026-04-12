@@ -21,6 +21,8 @@ spec:
   values:
     grafana:
       enabled: true
+      adminUser: "${GRAFANA_ADMIN_USER}"
+      adminPassword: "${GRAFANA_ADMIN_PASSWORD}"
       replicas: 1
       resources:
         requests:
