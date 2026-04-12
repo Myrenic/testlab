@@ -97,6 +97,12 @@ jobs:
 
           timeout 5 bash -c "</dev/tcp/${HOST}/${PORT}"
 
+      - name: OpenTofu init
+        shell: bash
+        run: |
+          set -euo pipefail
+          tofu -chdir=terraform/helios init -input=false
+
       - name: OpenTofu plan
         shell: bash
         run: |
