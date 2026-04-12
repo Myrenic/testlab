@@ -45,8 +45,8 @@ jobs:
         run: |
           set -euo pipefail
           for stack in terraform/helios terraform/atlas; do
-            tofu -chdir="$stack" fmt -check -recursive
             tofu -chdir="$stack" init -backend=false -input=false
+            tofu -chdir="$stack" fmt -check -recursive
             tofu -chdir="$stack" validate
           done
 
