@@ -21,8 +21,8 @@ spec:
     remediation:
       retries: 3
   postRenderers:
-    # Keep placement rules on the Deployment only. Chart-level affinity is inherited by
-    # upgrade hooks, which can deadlock Flux rollouts in a small cluster.
+    # The chart exposes affinity natively, but not topology spread constraints.
+    # Keep spread on the Deployment only so Helm's rendered manifest stays targeted.
     - kustomize:
         patches:
           - target:
@@ -39,17 +39,7 @@ spec:
                   rollingUpdate:
                     maxSurge: 1
                     maxUnavailable: 1
-              - op: replace
-                path: /spec/template/spec/affinity
-                value:
-                  podAntiAffinity:
-                    requiredDuringSchedulingIgnoredDuringExecution:
-                      - topologyKey: kubernetes.io/hostname
-                        labelSelector:
-                          matchLabels:
-                            app.kubernetes.io/name: velero
-                            app.kubernetes.io/instance: velero
-              - op: replace
+              - op: add
                 path: /spec/template/spec/topologySpreadConstraints
                 value:
                   - maxSkew: 1
@@ -106,6 +96,15 @@ spec:
         memory: 256Mi
       limits:
         memory: 1Gi
+
+    affinity:
+      podAntiAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/name: velero
+                app.kubernetes.io/instance: velero
 
     extraObjects:
       - apiVersion: policy/v1
