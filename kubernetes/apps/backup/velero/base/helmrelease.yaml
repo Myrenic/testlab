@@ -37,7 +37,7 @@ spec:
                 value:
                   type: RollingUpdate
                   rollingUpdate:
-                    maxSurge: 1
+                    maxSurge: 0
                     maxUnavailable: 1
               - op: add
                 path: /spec/template/spec/topologySpreadConstraints
