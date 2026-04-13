@@ -43,20 +43,18 @@ spec:
                 path: /spec/template/spec/affinity
                 value:
                   podAntiAffinity:
-                    preferredDuringSchedulingIgnoredDuringExecution:
-                      - weight: 100
-                        podAffinityTerm:
-                          topologyKey: kubernetes.io/hostname
-                          labelSelector:
-                            matchLabels:
-                              app.kubernetes.io/name: velero
-                              app.kubernetes.io/instance: velero
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      - topologyKey: kubernetes.io/hostname
+                        labelSelector:
+                          matchLabels:
+                            app.kubernetes.io/name: velero
+                            app.kubernetes.io/instance: velero
               - op: add
                 path: /spec/template/spec/topologySpreadConstraints
                 value:
                   - maxSkew: 1
                     topologyKey: kubernetes.io/hostname
-                    whenUnsatisfiable: ScheduleAnyway
+                    whenUnsatisfiable: DoNotSchedule
                     labelSelector:
                       matchLabels:
                         app.kubernetes.io/name: velero

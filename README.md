@@ -80,6 +80,47 @@ Daily backups are staggered at 03:00, 03:20, and 03:40 (7-day retention).
 Monthly backups are staggered at 05:00, 05:20, and 05:40 on the 1st (60-day retention).
 Backup operations are available in the Velero UI via `https://backups.${SECRET_DOMAIN_0}` (OAuth2-protected).
 
+Velero is hardened to self-heal after host trouble:
+
+- `velero` runs **2 replicas with hard node anti-affinity/topology spread**, so one flaky node should not take out both backup controllers.
+- `velero-ui` runs **2 replicas with hard node spread and a long startup probe**, so slow cold starts after a reboot do not turn into a liveness-loop.
+
+### Check Velero after a host reboot
+
+Use the backup storage location as the source-of-truth signal:
+
+```bash
+kubectl get pods -n velero -o wide
+kubectl get deploy -n velero velero velero-ui
+kubectl get backupstoragelocation/default -n velero
+```
+
+If `STATUS.phase=Available`, backups/restores are usable even if one replica is still
+coming back. **Do not wait for every Velero pod to become Ready** during cluster
+recovery; with hard anti-affinity, the second replica can stay `Pending` until another
+node is schedulable again.
+
+If Velero or the UI is still unhealthy after ~10 minutes on a healthy cluster:
+
+```bash
+flux reconcile kustomization velero -n flux-system --with-source
+flux reconcile kustomization velero-ui -n flux-system --with-source
+
+kubectl rollout restart deployment/velero -n velero
+kubectl rollout restart deployment/velero-ui -n velero
+
+kubectl wait --for=jsonpath='{.status.phase}'=Available backupstoragelocation/default \
+  -n velero --timeout=300s
+```
+
+Useful diagnostics:
+
+```bash
+kubectl logs -n velero deployment/velero --tail=200
+kubectl logs -n velero deployment/velero-ui --previous --tail=200
+kubectl describe pod -n velero -l app.kubernetes.io/instance=velero-ui
+```
+
 ### Restore an individual app (e.g. aiostreams)
 
 This is the reliable procedure for restoring a single app's PVC data. Velero uses
@@ -106,13 +147,15 @@ kubectl delete pvc $APP -n $NS
 # 4. Find the backup to restore from
 velero backup get | grep $APP
 
-# 5. Restart the Velero pod if the BackupStorageLocation shows "Unavailable"
-#    (an I/O error writing credentials to /tmp is cleared by a pod restart)
-kubectl get backupstoragelocation -n velero
-# If PHASE != Available:
+# 5. Check the real Velero health signal. If the backup storage location stays
+#    Unavailable for >10 minutes after the cluster is otherwise healthy, force
+#    a reconcile and restart the deployment.
+kubectl get backupstoragelocation/default -n velero
+# If PHASE != Available for >10m:
+flux reconcile kustomization velero -n flux-system --with-source
 kubectl rollout restart deployment/velero -n velero
-kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=velero \
-  -n velero --timeout=120s
+kubectl wait --for=jsonpath='{.status.phase}'=Available backupstoragelocation/default \
+  -n velero --timeout=300s
 
 # 6. Run the restore — do NOT use --existing-resource-policy update, as that
 #    causes Velero to update the existing Deployment instead of creating the pod
@@ -144,13 +187,27 @@ The new pods pick up in-flight `New` restores immediately.
 **BSL shows `Unavailable` (`input/output error` writing credentials)**
 
 The Azure plugin writes a temp credential file to `/tmp` inside the velero container.
-A node restart or stale pod can leave a replica in a bad state. Velero now runs with
-two replicas and anti-affinity, so this usually self-recovers. If BSL is still not
-`Available` after ~10 minutes, restart the deployment:
+Velero now runs with two replicas and hard node spread, so a single unhealthy node
+usually self-recovers without intervention. If BSL is still not `Available` after
+~10 minutes on an otherwise healthy cluster, reconcile and restart:
 
 ```bash
+flux reconcile kustomization velero -n flux-system --with-source
 kubectl rollout restart deployment/velero -n velero
-kubectl get backupstoragelocation -n velero   # wait for Available
+kubectl wait --for=jsonpath='{.status.phase}'=Available backupstoragelocation/default \
+  -n velero --timeout=300s
+```
+
+**Velero UI stuck in `CrashLoopBackOff` after a host reboot**
+
+The UI now runs two replicas with a startup probe, so it should tolerate slow cold
+starts while the cluster API and Velero settle. If both replicas stay unavailable for
+more than ~10 minutes:
+
+```bash
+flux reconcile kustomization velero-ui -n flux-system --with-source
+kubectl rollout restart deployment/velero-ui -n velero
+kubectl logs -n velero deployment/velero-ui --previous --tail=200
 ```
 
 **Kopia PodVolumeRestore stuck / `shouldProcess` returns false**
@@ -167,8 +224,8 @@ Velero's advanced kopia controller skips a PVR if the target pod is not running 
 
 ```bash
 # 1. Bootstrap Flux (steps 1–4 in Bootstrap section above)
-# 2. Wait for Velero
-kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=velero \
+# 2. Wait for the backup storage location to come back
+kubectl wait --for=jsonpath='{.status.phase}'=Available backupstoragelocation/default \
   -n velero --timeout=300s
 # 3. List backups and pick one
 velero backup get
