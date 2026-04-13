@@ -47,8 +47,7 @@ spec:
                     whenUnsatisfiable: DoNotSchedule
                     labelSelector:
                       matchLabels:
-                        app.kubernetes.io/name: velero
-                        app.kubernetes.io/instance: velero
+                        name: velero
   values:
     # Flux manages CRD updates via upgrade.crds: CreateReplace; disable the
     # chart's own pre-upgrade hook job to prevent it from dead-locking on
@@ -103,8 +102,7 @@ spec:
           - topologyKey: kubernetes.io/hostname
             labelSelector:
               matchLabels:
-                app.kubernetes.io/name: velero
-                app.kubernetes.io/instance: velero
+                name: velero
 
     extraObjects:
       - apiVersion: policy/v1
@@ -115,8 +113,7 @@ spec:
           minAvailable: 1
           selector:
             matchLabels:
-              app.kubernetes.io/name: velero
-              app.kubernetes.io/instance: velero
+              name: velero
 
     backupsEnabled: true
     snapshotsEnabled: false
