@@ -12,7 +12,10 @@ spec:
         kind: HelmRepository
         name: otwld
       interval: 15m
-  timeout: 10m
+  # A cold cluster recovery can leave the UI initializing for longer than the
+  # default 10 minute Helm wait; allow the startup probe to finish before
+  # Helm marks the release failed and rolls it back.
+  timeout: 20m
   install:
     remediation:
       retries: 3

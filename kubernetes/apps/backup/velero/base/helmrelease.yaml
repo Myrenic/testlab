@@ -39,7 +39,7 @@ spec:
                   rollingUpdate:
                     maxSurge: 1
                     maxUnavailable: 1
-              - op: add
+              - op: replace
                 path: /spec/template/spec/affinity
                 value:
                   podAntiAffinity:
@@ -49,7 +49,7 @@ spec:
                           matchLabels:
                             app.kubernetes.io/name: velero
                             app.kubernetes.io/instance: velero
-              - op: add
+              - op: replace
                 path: /spec/template/spec/topologySpreadConstraints
                 value:
                   - maxSkew: 1

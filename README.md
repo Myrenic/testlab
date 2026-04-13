@@ -84,6 +84,8 @@ Velero is hardened to self-heal after host trouble:
 
 - `velero` runs **2 replicas with hard node anti-affinity/topology spread**, so one flaky node should not take out both backup controllers.
 - `velero-ui` runs **2 replicas with hard node spread and a long startup probe**, so slow cold starts after a reboot do not turn into a liveness-loop.
+- Flux/Helm are allowed a longer timeout for `velero-ui`, because a cold reboot can
+  legitimately leave it warming up for **10-15 minutes** before it becomes Ready.
 
 ### Check Velero after a host reboot
 
@@ -100,7 +102,7 @@ coming back. **Do not wait for every Velero pod to become Ready** during cluster
 recovery; with hard anti-affinity, the second replica can stay `Pending` until another
 node is schedulable again.
 
-If Velero or the UI is still unhealthy after ~10 minutes on a healthy cluster:
+If Velero or the UI is still unhealthy after ~20 minutes on a healthy cluster:
 
 ```bash
 flux reconcile kustomization velero -n flux-system --with-source
@@ -201,8 +203,9 @@ kubectl wait --for=jsonpath='{.status.phase}'=Available backupstoragelocation/de
 **Velero UI stuck in `CrashLoopBackOff` after a host reboot**
 
 The UI now runs two replicas with a startup probe, so it should tolerate slow cold
-starts while the cluster API and Velero settle. If both replicas stay unavailable for
-more than ~10 minutes:
+starts while the cluster API and Velero settle. A cold reboot can still leave it
+warming up for 10-15 minutes. If both replicas stay unavailable for more than
+~20 minutes:
 
 ```bash
 flux reconcile kustomization velero-ui -n flux-system --with-source
