@@ -18,3 +18,4 @@ resources:
   - ./pihole.yaml
   - ./grafana.yaml
   - ./zigbee2mqtt.yaml
+  - ./catch-all.yaml
