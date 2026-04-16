@@ -22,7 +22,7 @@ spec:
               ZIGBEE2MQTT_CONFIG_MQTT_SERVER: "mqtt://mqtt.services.svc.cluster.local"
               # Zigbee adapter — update PLACEHOLDER_SMLIGHT_IP to your SMLIGHT MR5U IP address
               ZIGBEE2MQTT_CONFIG_SERIAL_PORT: "tcp://PLACEHOLDER_SMLIGHT_IP:6638"
-              ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER: "ezsp"
+              ZIGBEE2MQTT_CONFIG_SERIAL_ADAPTER: "ember"
               # Web frontend
               ZIGBEE2MQTT_CONFIG_FRONTEND_PORT: "8080"
               # Home Assistant MQTT discovery (nested object in Z2M 2.x)
