@@ -17,3 +17,4 @@ resources:
   - ./coder.yaml
   - ./pihole.yaml
   - ./grafana.yaml
+  - ./zigbee2mqtt.yaml

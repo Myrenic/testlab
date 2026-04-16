@@ -29,7 +29,7 @@
 		"control12": {
 			"name": "control12",
 			"cores": 10,
-			"memory": 22000,
+			"memory": 22001,
 			"ip_addr": "ENC[AES256_GCM,data:OsfVDRD9OXY6vw==,iv:djnIKbPwqNdEwW2kIMB7xjvFxmhfM/5XCE0uMrdeQhg=,tag:ZnnGBa2YAopp64bsw+nP3w==,type:str]",
 			"gateway": "ENC[AES256_GCM,data:DjyfGlMAY0YV,iv:MYXpjR1W5gfppTCQ+ygTm8j4/hiSvakxVy08D/+l27U=,tag:bFtZPFw/6ZtFg4k8ozULnQ==,type:str]",
 			"cidr": "/24",
@@ -66,8 +66,8 @@
 				"enc": "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSB6UUtuc2pnKzBqNkh4a2Fx\nLzBvN0o0M2dXNzRRTWNzQkFaTW9qVGN0d3hVClpzK1hlT3dkMlkyd1JjNW01ZVgv\nalp5S2tjKy9xZnFVbjhId1pSYjN5UVEKLS0tIDVNaXN6Y0RGSSs5b1ZMYitIeVVW\nQkNvLzVTU0dJY0N4M1pnWlUyRFhkOEkKrbfuqObTwYSgXZ7d2HI1L67pP+gk5p/W\nMkxSptSMiLpNjY3reWAD3HHKUxb4gGbSsaOKNxKaY6VYASQKZp+Oug==\n-----END AGE ENCRYPTED FILE-----\n"
 			}
 		],
-		"lastmodified": "2026-04-12T11:27:33Z",
-		"mac": "ENC[AES256_GCM,data:kKuLwkftFgwjLmkbMeXiSfuYktP2b1zxF8KI/H84EX5tsFQU63EhhZklbpT7TKG6yUc1Y4VqLt4WmPBjO5m6pk9NP8oWlS7wCmc16sDy0kqqp8jxqfn3ceB9fYqpMfPVqylqJcI69rlh+rVbNE/3l818rZGRKiPhAqZ54JAJ36I=,iv:WsIZ8RmjN3YybUCipiz2/7zUL0F1G1P+jfIemdGnasI=,tag:+tlwt8lclZSTRxsfyS5sRQ==,type:str]",
+		"lastmodified": "2026-04-12T12:07:07Z",
+		"mac": "ENC[AES256_GCM,data:Hfg2LjpLx+kygsZ6G1OmJ8ui9r0+RUUgl1ZBUzE4E7BI8OipoEsT9eGHBtOpyfr++4mtVxgag4MnpwR/zbRk+MliMiVOqZIVuZtJ8W2+bJVSlQnI3QZuo9XzoY2uCAHwPJBFKvzALvuSmst5KMgaUtg1CYvzJel1nyPHxiTUPBA=,iv:c0tuBDcoeRv6UjElO4TqOBwCW4BD5oNvL4KhG80JTNg=,tag:6j3jHtj2FXOOpFgSohKsFA==,type:str]",
 		"encrypted_regex": "^(password|username|ip_addr|gateway|url)$",
 		"version": "3.11.0"
 	}

@@ -1,0 +1,47 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: mqtt
+spec:
+  interval: 1h
+  chartRef:
+    kind: OCIRepository
+    name: mqtt
+  values:
+    controllers:
+      mqtt:
+        strategy: Recreate
+        containers:
+          app:
+            image:
+              repository: eclipse-mosquitto
+              tag: "2.0.21"
+            env:
+              TZ: "${TZ}"
+            resources: {}
+        pod:
+          securityContext:
+            runAsNonRoot: false
+            seccompProfile:
+              type: RuntimeDefault
+    service:
+      app:
+        ports:
+          mqtt:
+            port: 1883
+            protocol: TCP
+    persistence:
+      config:
+        type: configMap
+        name: mqtt-config
+        globalMounts:
+          - path: /mosquitto/config/mosquitto.conf
+            subPath: mosquitto.conf
+            readOnly: true
+      data:
+        type: persistentVolumeClaim
+        storageClass: longhorn-2-replicas
+        accessMode: ReadWriteOnce
+        size: 500Mi
+        globalMounts:
+          - path: /mosquitto/data
