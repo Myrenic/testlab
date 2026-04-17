@@ -1,0 +1,14 @@
+---
+cluster:
+  apiServer:
+    extraArgs:
+      # Reduce pod eviction time when node is not-ready from 300s → 30s
+      default-not-ready-toleration-seconds: "30"
+      # Reduce pod eviction time when node is unreachable from 300s → 30s
+      default-unreachable-toleration-seconds: "30"
+  controllerManager:
+    extraArgs:
+      # Check node health every 5s (default)
+      node-monitor-period: 5s
+      # Declare node unhealthy after 20s without heartbeat (was 40s)
+      node-monitor-grace-period: 20s

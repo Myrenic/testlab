@@ -23,11 +23,12 @@ spec:
   values:
     defaultSettings:
       autoSalvage: true
-      defaultReplicaCount: 3
+      defaultReplicaCount: 2
       nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
       replicaAutoBalance: best-effort
+      allowVolumeCreationWithDegradedAvailability: true
     persistence:
-      defaultClassReplicaCount: 3
+      defaultClassReplicaCount: 2
       allowVolumeExpansion: true
       reclaimPolicy: Retain
       volumeBindingMode: Immediate
