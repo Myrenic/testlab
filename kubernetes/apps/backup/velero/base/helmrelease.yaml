@@ -119,6 +119,19 @@ spec:
     snapshotsEnabled: false
     deployNodeAgent: true
 
+    # fs-restore-action-config tells Velero which image to inject as the
+    # restore-helper init container during file-system (kopia) restores.
+    # Since v1.14, velero-restore-helper is merged into the main velero image;
+    # without this ConfigMap Velero falls back to the non-existent
+    # "velero-restore-helper" image name and every PVC restore fails.
+    configMaps:
+      fs-restore-action-config:
+        labels:
+          velero.io/plugin-config: ""
+          velero.io/pod-volume-restore: RestoreItemAction
+        data:
+          image: docker.io/velero/velero:v1.18.0
+
     schedules:
       # Application data backup — includes PVC (filesystem backup via kopia)
       aiostreams-daily:
