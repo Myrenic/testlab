@@ -22,9 +22,8 @@ proxmox = {
 
 # Sensitive – copy to terraform.auto.tfvars and keep out of version control
 omni = {
-  endpoint       = "omni.example.com"
-  auth_endpoint  = "auth.example.com"
-  admin_email    = "admin@example.com"
-  admin_password = "changeme"
-  public_ip      = "1.2.3.4"
+  endpoint      = "omni.example.com"
+  auth_endpoint = "omni.example.com"
+  admin_email   = "admin@example.com"
+  public_ip     = "1.2.3.4"
 }

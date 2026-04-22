@@ -30,14 +30,12 @@ variable "proxmox" {
 variable "omni" {
   sensitive = true
   type = object({
-    # Hostname clients use to reach the Omni UI/API (e.g. omni.example.com)
+    # Hostname clients use to reach the Omni UI/API (e.g. omni.example.com or IP)
     endpoint = string
-    # Hostname for the Dex OIDC provider (e.g. auth.example.com)
+    # Hostname for the Dex OIDC provider (can be the same as endpoint)
     auth_endpoint = string
-    # Initial admin user email
+    # Initial admin user email — auto-logged in via mockCallback (no password needed)
     admin_email = string
-    # Admin login password (plain-text; bcrypt-hashed on the remote host, never stored in state)
-    admin_password = string
     # Public IP of the VM – used for WireGuard advertisement and TLS SAN
     public_ip = string
   })

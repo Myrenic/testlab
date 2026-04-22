@@ -164,16 +164,7 @@
       environment:
         GNUPGHOME: "{{ gnupg_dir }}"
 
-    # ── Dex OIDC Identity Provider ──────────────────────────────────────────
-    - name: Generate Dex admin password hash (bcrypt via htpasswd)
-      # -b: read password from command line, -n: stdout, -B: bcrypt, -C 15: cost
-      shell: >
-        docker run --rm httpd:2.4-alpine
-        htpasswd -bnBC 15 admin "{{ admin_password }}" | cut -d: -f2
-      register: dex_password_hash
-      changed_when: false
-      no_log: true
-
+    # ── Dex OIDC Identity Provider (mockCallback – no credentials needed) ───
     - name: Write Dex configuration
       copy:
         dest: "{{ omni_dir }}/dex.yaml"
@@ -189,7 +180,15 @@
             tlsCert: /etc/dex/tls/server-chain.pem
             tlsKey: /etc/dex/tls/server-key.pem
 
-          enablePasswordDB: true
+          # mockCallback: one-click login, no credentials required
+          connectors:
+            - type: mockCallback
+              id: mock
+              name: Sign In
+              config:
+                username: admin
+                userID: "{{ admin_email }}"
+                email: "{{ admin_email }}"
 
           staticClients:
             - name: Omni
@@ -197,13 +196,6 @@
               secret: omni-dex-secret
               redirectURIs:
                 - https://{{ omni_endpoint }}/oidc/consume
-
-          staticPasswords:
-            - email: "{{ admin_email }}"
-              username: "admin"
-              preferredUsername: "admin"
-              hash: "{{ dex_password_hash.stdout | trim }}"
-      no_log: true
 
     - name: Start Dex container
       shell: |
