@@ -82,6 +82,7 @@
           {
             "CN": "Omni Internal Root CA",
             "key": { "algo": "rsa", "size": 4096 },
+            "ca": { "expiry": "87600h" },
             "names": [{ "C": "US", "O": "Omni Infrastructure", "OU": "Security" }]
           }
 
@@ -131,6 +132,18 @@
             "key": { "algo": "rsa", "size": 4096 }
           }
 
+    # When renew_certs=true is passed (e.g. during a tofu apply to force renewal),
+    # remove the old server cert so the next task regenerates it.
+    - name: Remove existing server certificate (forced renewal)
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ omni_dir }}/server.pem"
+        - "{{ omni_dir }}/server-key.pem"
+        - "{{ omni_dir }}/server-chain.pem"
+      when: renew_certs | default(false) | bool
+
     - name: Generate server certificate and full-chain bundle
       shell: |
         cfssl gencert \
@@ -144,6 +157,77 @@
       args:
         chdir: "{{ omni_dir }}"
         creates: "{{ omni_dir }}/server-chain.pem"
+      notify: Restart Dex and Omni
+
+    # ── Auto-renewal script and systemd timer ────────────────────────────────
+    - name: Write cert renewal script
+      copy:
+        dest: /usr/local/bin/omni-renew-certs
+        mode: "0755"
+        content: |
+          #!/bin/bash
+          # Renews the Omni server TLS certificate if it expires within 30 days.
+          # The CA is long-lived (10 years) and is never rotated by this script.
+          set -euo pipefail
+          OMNI_DIR=/opt/omni
+          DAYS_BEFORE_EXPIRY=30
+
+          if openssl x509 -noout -checkend $((DAYS_BEFORE_EXPIRY * 86400)) \
+              -in "${OMNI_DIR}/server.pem" 2>/dev/null; then
+            echo "omni-renew-certs: certificate valid for more than ${DAYS_BEFORE_EXPIRY} days, nothing to do."
+            exit 0
+          fi
+
+          echo "omni-renew-certs: certificate expires within ${DAYS_BEFORE_EXPIRY} days — renewing."
+          cd "${OMNI_DIR}"
+          rm -f server.pem server-key.pem server-chain.pem
+          cfssl gencert \
+            -ca=ca.pem \
+            -ca-key=ca-key.pem \
+            -config=ca-config.json \
+            -profile=web-server \
+            wildcard-csr.json | cfssljson -bare server
+          cat server.pem ca.pem > server-chain.pem
+          chmod 644 server*.pem
+
+          echo "omni-renew-certs: restarting Dex and Omni."
+          docker restart dex
+          # Wait for Dex OIDC endpoint before restarting Omni
+          for i in $(seq 1 30); do
+            curl -sk https://127.0.0.1:5556/.well-known/openid-configuration | grep -q issuer && break
+            sleep 5
+          done
+          docker restart omni
+          echo "omni-renew-certs: done."
+
+    - name: Install omni-renew-certs systemd service
+      copy:
+        dest: /etc/systemd/system/omni-renew-certs.service
+        content: |
+          [Unit]
+          Description=Renew Omni TLS certificate if expiring soon
+          After=docker.service
+
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/local/bin/omni-renew-certs
+          StandardOutput=journal
+          StandardError=journal
+
+    - name: Install omni-renew-certs systemd timer (weekly)
+      copy:
+        dest: /etc/systemd/system/omni-renew-certs.timer
+        content: |
+          [Unit]
+          Description=Weekly check: renew Omni TLS cert if expiring within 30 days
+
+          [Timer]
+          OnCalendar=weekly
+          Persistent=true
+
+          [Install]
+          WantedBy=timers.target
+      notify: Reload systemd and enable cert timer
 
     # ── etcd Encryption Key ─────────────────────────────────────────────────
     - name: Generate GPG key for Omni etcd encryption
@@ -290,3 +374,17 @@
   handlers:
     - name: Update CA certificates
       command: update-ca-certificates
+
+    - name: Restart Dex and Omni
+      shell: |
+        docker restart dex
+        for i in $(seq 1 30); do
+          curl -sk https://127.0.0.1:5556/.well-known/openid-configuration | grep -q issuer && break
+          sleep 5
+        done
+        docker restart omni
+
+    - name: Reload systemd and enable cert timer
+      shell: |
+        systemctl daemon-reload
+        systemctl enable --now omni-renew-certs.timer

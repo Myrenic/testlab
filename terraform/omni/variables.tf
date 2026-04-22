@@ -27,6 +27,12 @@ variable "proxmox" {
   })
 }
 
+variable "renew_certs" {
+  description = "Set to true to force server TLS certificate renewal on the next tofu apply."
+  type        = bool
+  default     = false
+}
+
 variable "omni" {
   sensitive = true
   type = object({
