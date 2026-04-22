@@ -88,6 +88,7 @@ resource "ansible_playbook" "deploy_omni" {
     omni_endpoint                = var.omni.endpoint
     auth_endpoint                = var.omni.auth_endpoint
     admin_email                  = var.omni.admin_email
+    admin_password               = var.omni.admin_password
     public_ip                    = var.omni.public_ip
   }
 

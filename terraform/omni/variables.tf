@@ -34,8 +34,10 @@ variable "omni" {
     endpoint = string
     # Hostname for the Dex OIDC provider (can be the same as endpoint)
     auth_endpoint = string
-    # Initial admin user email — auto-logged in via mockCallback (no password needed)
+    # Initial admin user email
     admin_email = string
+    # Admin login password (plain-text; bcrypt-hashed on the remote host, never stored in state)
+    admin_password = string
     # Public IP of the VM – used for WireGuard advertisement and TLS SAN
     public_ip = string
   })
