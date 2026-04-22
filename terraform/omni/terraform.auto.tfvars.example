@@ -26,5 +26,6 @@ omni = {
   auth_endpoint  = "omni.example.com"
   admin_email    = "admin@example.com"
   admin_password = "changeme"
+  omni_version   = "v1.7.0"   # pin to a specific release; set "" to always use latest
   public_ip      = "1.2.3.4"
 }

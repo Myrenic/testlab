@@ -46,5 +46,8 @@ variable "omni" {
     admin_password = string
     # Public IP of the VM – used for WireGuard advertisement and TLS SAN
     public_ip = string
+    # Omni image tag to deploy (e.g. "v1.7.0"). Leave empty ("") to always use latest.
+    # Pin this to avoid unintended upgrades when re-running tofu apply.
+    omni_version = optional(string, "")
   })
 }

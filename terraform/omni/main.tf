@@ -90,6 +90,7 @@ resource "ansible_playbook" "deploy_omni" {
     admin_email                  = var.omni.admin_email
     admin_password               = var.omni.admin_password
     public_ip                    = var.omni.public_ip
+    omni_version                 = var.omni.omni_version
     renew_certs                  = var.renew_certs
   }
 

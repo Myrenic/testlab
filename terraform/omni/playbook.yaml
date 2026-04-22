@@ -190,14 +190,14 @@
           cat server.pem ca.pem > server-chain.pem
           chmod 644 server*.pem
 
-          echo "omni-renew-certs: restarting Dex and Omni."
-          docker restart dex
-          # Wait for Dex OIDC endpoint before restarting Omni
+          echo "omni-renew-certs: restarting stack via docker compose."
+          docker compose restart dex
           for i in $(seq 1 30); do
-            curl -sk https://127.0.0.1:5556/.well-known/openid-configuration | grep -q issuer && break
+            docker compose exec dex curl -sk \
+              https://127.0.0.1:5556/.well-known/openid-configuration | grep -q issuer && break
             sleep 5
           done
-          docker restart omni
+          docker compose restart omni
           echo "omni-renew-certs: done."
 
     - name: Install omni-renew-certs systemd service
@@ -250,10 +250,24 @@
 
     # ── Dex OIDC Identity Provider ──────────────────────────────────────────
     - name: Generate Dex admin password hash (bcrypt via htpasswd)
-      # -b: read password from command line, -n: stdout, -B: bcrypt, -C 10: cost
-      shell: >
-        docker run --rm httpd:2.4-alpine
-        htpasswd -bnBC 10 admin "{{ admin_password }}" | cut -d: -f2
+      # Caches the bcrypt hash alongside a SHA256 of the password in
+      # .dex-hash so the non-deterministic bcrypt output stays stable
+      # across runs (hash changes only when admin_password changes).
+      shell: |
+        HASH_FILE="{{ omni_dir }}/.dex-hash"
+        PW_SHA=$(echo -n "{{ admin_password }}" | sha256sum | cut -d' ' -f1)
+        if [ -f "$HASH_FILE" ]; then
+          STORED_SHA=$(cut -d: -f1 "$HASH_FILE")
+          if [ "$STORED_SHA" = "$PW_SHA" ]; then
+            cut -d: -f2 "$HASH_FILE"
+            exit 0
+          fi
+        fi
+        HASH=$(docker run --rm httpd:2.4-alpine \
+          htpasswd -bnBC 10 admin "{{ admin_password }}" | cut -d: -f2 | tr -d '\r\n')
+        echo "${PW_SHA}:${HASH}" > "$HASH_FILE"
+        chmod 600 "$HASH_FILE"
+        echo "$HASH"
       register: dex_password_hash
       changed_when: false
       no_log: true
@@ -289,78 +303,133 @@
               hash: "{{ dex_password_hash.stdout | trim }}"
       no_log: true
 
-    - name: Start Dex container
-      shell: |
-        docker rm -f dex 2>/dev/null || true
-        docker run -d \
-          --name dex \
-          --restart=unless-stopped \
-          -p 5556:5556 \
-          -v {{ omni_dir }}/dex.yaml:/etc/dex/dex.yaml:ro,Z \
-          -v {{ omni_dir }}/server-key.pem:/etc/dex/tls/server-key.pem:ro,Z \
-          -v {{ omni_dir }}/server-chain.pem:/etc/dex/tls/server-chain.pem:ro,Z \
-          ghcr.io/dexidp/dex:v2.41.1 dex serve /etc/dex/dex.yaml
-      changed_when: true
-
-    - name: Wait for Dex OIDC endpoint to be ready
-      uri:
-        url: "https://{{ auth_endpoint }}:5556/.well-known/openid-configuration"
-        validate_certs: false
-        status_code: 200
-      register: dex_health
-      until: dex_health.status == 200
-      retries: 15
-      delay: 5
-
-    # ── Omni Container ──────────────────────────────────────────────────────
+    # ── Omni + Dex Stack (Docker Compose) ───────────────────────────────────
+    # Resolve the Omni image version: use the provided value or fetch latest.
     - name: Fetch latest Omni release tag
       shell: |
         curl -sI https://github.com/siderolabs/omni/releases/latest \
           | grep -i location | awk -F '/' '{print $NF}' | tr -d '\r'
-      register: omni_version
+      register: omni_latest_tag
+      changed_when: false
+      when: omni_version | default('') == ''
+
+    - name: Set effective Omni version
+      set_fact:
+        effective_omni_version: >-
+          {{ omni_version if omni_version | default('') != ''
+             else omni_latest_tag.stdout | default('') | trim }}
+
+    # docker-compose.yml is the single source of truth for the stack.
+    # depends_on + service_healthy ensures Dex is ready before Omni starts —
+    # on first boot, on every apply, and on any compose restart.
+    - name: Write docker-compose.yml
+      copy:
+        dest: "{{ omni_dir }}/docker-compose.yml"
+        mode: "0644"
+        content: |
+          services:
+            dex:
+              image: ghcr.io/dexidp/dex:v2.41.1
+              restart: unless-stopped
+              command: dex serve /etc/dex/dex.yaml
+              ports:
+                - "5556:5556"
+              volumes:
+                - ./dex.yaml:/etc/dex/dex.yaml:ro
+                - ./server-key.pem:/etc/dex/tls/server-key.pem:ro
+                - ./server-chain.pem:/etc/dex/tls/server-chain.pem:ro
+              healthcheck:
+                test: ["CMD-SHELL", "wget -qO- --no-check-certificate https://127.0.0.1:5556/.well-known/openid-configuration 2>/dev/null | grep -q issuer"]
+                interval: 10s
+                timeout: 5s
+                retries: 30
+                start_period: 10s
+
+            omni:
+              image: ghcr.io/siderolabs/omni:{{ effective_omni_version }}
+              restart: unless-stopped
+              network_mode: host
+              cap_add:
+                - NET_ADMIN
+              devices:
+                - /dev/net/tun:/dev/net/tun
+              volumes:
+                - ./ca.pem:/etc/ssl/certs/ca-certificates.crt:ro
+                - ./server-key.pem:/server-key.pem:ro
+                - ./server-chain.pem:/server-chain.pem:ro
+                - ./omni.asc:/omni.asc:ro
+                - ./sqlite:/_out/sqlite:rw
+              command:
+                - --name=omni
+                - --cert=/server-chain.pem
+                - --key=/server-key.pem
+                - --machine-api-cert=/server-chain.pem
+                - --machine-api-key=/server-key.pem
+                - --machine-api-bind-addr=0.0.0.0:8090
+                - --private-key-source=file:///omni.asc
+                - --event-sink-port=8091
+                - --bind-addr=0.0.0.0:443
+                - --k8s-proxy-bind-addr=0.0.0.0:8100
+                - --advertised-api-url=https://{{ omni_endpoint }}/
+                - --siderolink-api-advertised-url=https://{{ omni_endpoint }}:8090/
+                - --siderolink-wireguard-advertised-addr={{ public_ip }}:50180
+                - --advertised-kubernetes-proxy-url=https://{{ omni_endpoint }}:8100/
+                - --auth-auth0-enabled=false
+                - --auth-oidc-enabled=true
+                - --auth-oidc-provider-url=https://{{ auth_endpoint }}:5556
+                - --auth-oidc-client-id=omni
+                - --auth-oidc-client-secret=omni-dex-secret
+                - --auth-oidc-scopes=openid
+                - --auth-oidc-scopes=profile
+                - --auth-oidc-scopes=email
+                - --sqlite-storage-path=/_out/sqlite/omni.db
+                - --initial-users={{ admin_email }}
+              depends_on:
+                dex:
+                  condition: service_healthy
+      notify: Bring up compose stack
+
+    # Migrate away from legacy standalone containers started by previous playbook runs.
+    - name: Remove legacy standalone containers (pre-compose)
+      shell: |
+        for c in dex omni; do
+          LABELS=$(docker inspect "$c" --format '{{ "{{" }}json .Config.Labels{{ "}}" }}' 2>/dev/null || echo '{}')
+          if echo "$LABELS" | grep -qv 'com.docker.compose'; then
+            docker rm -f "$c" 2>/dev/null || true
+          fi
+        done
       changed_when: false
 
-    - name: Start Omni container
-      # Requires --net=host (binds port 443 directly) and NET_ADMIN + /dev/net/tun for WireGuard
-      shell: |
-        docker rm -f omni 2>/dev/null || true
-        docker run -d \
-          --name omni \
-          --net=host \
-          --cap-add=NET_ADMIN \
-          --device /dev/net/tun:/dev/net/tun \
-          --restart=unless-stopped \
-          -v {{ omni_dir }}/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro,Z \
-          -v {{ omni_dir }}/server-key.pem:/server-key.pem:ro,Z \
-          -v {{ omni_dir }}/server-chain.pem:/server-chain.pem:ro,Z \
-          -v {{ omni_dir }}/omni.asc:/omni.asc:ro,Z \
-          -v {{ sqlite_dir }}:/_out/sqlite:rw,Z \
-          ghcr.io/siderolabs/omni:{{ omni_version.stdout | trim }} \
-            --name=omni \
-            --cert=/server-chain.pem \
-            --key=/server-key.pem \
-            --machine-api-cert=/server-chain.pem \
-            --machine-api-key=/server-key.pem \
-            --machine-api-bind-addr=0.0.0.0:8090 \
-            --private-key-source=file:///omni.asc \
-            --event-sink-port=8091 \
-            --bind-addr=0.0.0.0:443 \
-            --k8s-proxy-bind-addr=0.0.0.0:8100 \
-            --advertised-api-url=https://{{ omni_endpoint }}/ \
-            --siderolink-api-advertised-url=https://{{ omni_endpoint }}:8090/ \
-            --siderolink-wireguard-advertised-addr={{ public_ip }}:50180 \
-            --advertised-kubernetes-proxy-url=https://{{ omni_endpoint }}:8100/ \
-            --auth-auth0-enabled=false \
-            --auth-oidc-enabled=true \
-            --auth-oidc-provider-url=https://{{ auth_endpoint }}:5556 \
-            --auth-oidc-client-id=omni \
-            --auth-oidc-client-secret=omni-dex-secret \
-            --auth-oidc-scopes=openid \
-            --auth-oidc-scopes=profile \
-            --auth-oidc-scopes=email \
-            --sqlite-storage-path=/_out/sqlite/omni.db \
-            --initial-users={{ admin_email }}
-      changed_when: true
+    # Idempotent: no-op when containers are already running with the correct config.
+    - name: Ensure compose stack is running
+      shell: docker compose -f {{ omni_dir }}/docker-compose.yml up -d --wait --pull missing
+      args:
+        chdir: "{{ omni_dir }}"
+      register: compose_up
+      changed_when: "'Started' in compose_up.stdout or 'Created' in compose_up.stdout"
+
+    # systemd unit ensures proper ordered startup after a host reboot.
+    # Docker Compose respects depends_on + service_healthy on each `up -d`.
+    - name: Install omni-stack systemd service
+      copy:
+        dest: /etc/systemd/system/omni-stack.service
+        content: |
+          [Unit]
+          Description=Omni self-hosted stack (Dex → Omni via Docker Compose)
+          After=docker.service network-online.target
+          Requires=docker.service
+          Wants=network-online.target
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          WorkingDirectory={{ omni_dir }}
+          ExecStart=/usr/bin/docker compose up -d --wait
+          ExecStop=/usr/bin/docker compose down
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: Reload systemd and enable omni-stack
 
     - name: Verify containers are running
       shell: docker ps --format "table {{ '{{' }}.Names{{ '}}' }}\t{{ '{{' }}.Status{{ '}}' }}"
@@ -375,16 +444,25 @@
     - name: Update CA certificates
       command: update-ca-certificates
 
+    - name: Bring up compose stack
+      shell: docker compose -f {{ omni_dir }}/docker-compose.yml up -d --wait --pull missing
+      args:
+        chdir: "{{ omni_dir }}"
+
     - name: Restart Dex and Omni
       shell: |
-        docker restart dex
-        for i in $(seq 1 30); do
-          curl -sk https://127.0.0.1:5556/.well-known/openid-configuration | grep -q issuer && break
-          sleep 5
-        done
-        docker restart omni
+        cd {{ omni_dir }}
+        docker compose restart dex
+        docker compose exec dex curl -sk \
+          https://127.0.0.1:5556/.well-known/openid-configuration | grep -q issuer || sleep 30
+        docker compose restart omni
 
     - name: Reload systemd and enable cert timer
       shell: |
         systemctl daemon-reload
         systemctl enable --now omni-renew-certs.timer
+
+    - name: Reload systemd and enable omni-stack
+      shell: |
+        systemctl daemon-reload
+        systemctl enable --now omni-stack.service
