@@ -1,0 +1,292 @@
+---
+- name: Deploy Omni Self-Hosted
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    omni_dir: /opt/omni
+    sqlite_dir: /opt/omni/sqlite
+    gnupg_dir: /opt/omni/.gnupg
+
+  tasks:
+    # Wait before trying SSH — cloud-init takes time to configure networking
+    - name: Wait for VM SSH to become available
+      wait_for_connection:
+        delay: 60
+        timeout: 600
+
+    - name: Gather facts
+      setup:
+
+    - name: Update apt cache and upgrade packages
+      apt:
+        update_cache: true
+        upgrade: dist
+
+    - name: Install prerequisite packages
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+
+    # ── Docker ──────────────────────────────────────────────────────────────
+    - name: Install Docker via official install script
+      shell: curl -fsSL https://get.docker.com | sh
+      args:
+        creates: /usr/bin/docker
+
+    - name: Ensure Docker is started and enabled
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    # ── cfssl ───────────────────────────────────────────────────────────────
+    - name: Install cfssl and cfssljson
+      shell: |
+        CFSSL_VERSION=$(curl -sI https://github.com/cloudflare/cfssl/releases/latest \
+          | grep -i location | awk -F '/' '{print $NF}' | tr -d '\r')
+        curl -sL -o /usr/local/bin/cfssl \
+          "https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssl_${CFSSL_VERSION#v}_linux_amd64"
+        curl -sL -o /usr/local/bin/cfssljson \
+          "https://github.com/cloudflare/cfssl/releases/download/${CFSSL_VERSION}/cfssljson_${CFSSL_VERSION#v}_linux_amd64"
+        chmod +x /usr/local/bin/cfssl /usr/local/bin/cfssljson
+      args:
+        creates: /usr/local/bin/cfssl
+
+    # ── Directories ─────────────────────────────────────────────────────────
+    - name: Create Omni working directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0750"
+      loop:
+        - "{{ omni_dir }}"
+        - "{{ sqlite_dir }}"
+
+    - name: Add Omni and Dex hostnames to /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "127.0.0.1 {{ omni_endpoint }} {{ auth_endpoint }}"
+        state: present
+      # Skip when endpoints are raw IP addresses (no DNS resolution needed)
+      when: omni_endpoint | regex_search('^[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+$') is none
+
+    # ── TLS Certificates ────────────────────────────────────────────────────
+    - name: Write CA CSR
+      copy:
+        dest: "{{ omni_dir }}/ca-csr.json"
+        content: |
+          {
+            "CN": "Omni Internal Root CA",
+            "key": { "algo": "rsa", "size": 4096 },
+            "names": [{ "C": "US", "O": "Omni Infrastructure", "OU": "Security" }]
+          }
+
+    - name: Generate CA certificate
+      shell: cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+      args:
+        chdir: "{{ omni_dir }}"
+        creates: "{{ omni_dir }}/ca.pem"
+
+    - name: Trust CA certificate on the host
+      copy:
+        remote_src: true
+        src: "{{ omni_dir }}/ca.pem"
+        dest: /usr/local/share/ca-certificates/omni-ca.crt
+        mode: "0644"
+      notify: Update CA certificates
+
+    - name: Write cfssl signing config
+      copy:
+        dest: "{{ omni_dir }}/ca-config.json"
+        content: |
+          {
+            "signing": {
+              "default": { "expiry": "8760h" },
+              "profiles": {
+                "web-server": {
+                  "usages": ["signing", "key encipherment", "server auth"],
+                  "expiry": "8760h"
+                }
+              }
+            }
+          }
+
+    - name: Write server certificate CSR
+      copy:
+        dest: "{{ omni_dir }}/wildcard-csr.json"
+        content: |
+          {
+            "CN": "Omni Internal Wildcard",
+            "hosts": [
+              "{{ omni_endpoint }}",
+              "{{ auth_endpoint }}",
+              "127.0.0.1",
+              "{{ public_ip }}",
+              "{{ ansible_default_ipv4.address }}"
+            ],
+            "key": { "algo": "rsa", "size": 4096 }
+          }
+
+    - name: Generate server certificate and full-chain bundle
+      shell: |
+        cfssl gencert \
+          -ca=ca.pem \
+          -ca-key=ca-key.pem \
+          -config=ca-config.json \
+          -profile=web-server \
+          wildcard-csr.json | cfssljson -bare server
+        cat server.pem ca.pem > server-chain.pem
+        chmod 644 server*.pem
+      args:
+        chdir: "{{ omni_dir }}"
+        creates: "{{ omni_dir }}/server-chain.pem"
+
+    # ── etcd Encryption Key ─────────────────────────────────────────────────
+    - name: Generate GPG key for Omni etcd encryption
+      shell: |
+        mkdir -p "{{ gnupg_dir }}"
+        chmod 700 "{{ gnupg_dir }}"
+        gpg --batch --passphrase '' \
+          --quick-generate-key \
+          "Omni (Used for etcd data encryption) omni@internal.local" \
+          rsa4096 cert never
+        FINGERPRINT=$(gpg --with-colons --list-keys "omni@internal.local" \
+          | awk -F: '$1 == "fpr" {print $10; exit}')
+        gpg --batch --passphrase '' \
+          --quick-add-key "${FINGERPRINT}" rsa4096 encr never
+        gpg --export-secret-key --armor omni@internal.local > "{{ omni_dir }}/omni.asc"
+      args:
+        creates: "{{ omni_dir }}/omni.asc"
+      environment:
+        GNUPGHOME: "{{ gnupg_dir }}"
+
+    # ── Dex OIDC Identity Provider ──────────────────────────────────────────
+    - name: Generate Dex admin password hash (bcrypt via htpasswd)
+      # -b: read password from command line, -n: stdout, -B: bcrypt, -C 15: cost
+      shell: >
+        docker run --rm httpd:2.4-alpine
+        htpasswd -bnBC 15 admin "{{ admin_password }}" | cut -d: -f2
+      register: dex_password_hash
+      changed_when: false
+      no_log: true
+
+    - name: Write Dex configuration
+      copy:
+        dest: "{{ omni_dir }}/dex.yaml"
+        mode: "0644"
+        content: |
+          issuer: https://{{ auth_endpoint }}:5556
+
+          storage:
+            type: memory
+
+          web:
+            https: 0.0.0.0:5556
+            tlsCert: /etc/dex/tls/server-chain.pem
+            tlsKey: /etc/dex/tls/server-key.pem
+
+          enablePasswordDB: true
+
+          staticClients:
+            - name: Omni
+              id: omni
+              secret: omni-dex-secret
+              redirectURIs:
+                - https://{{ omni_endpoint }}/oidc/consume
+
+          staticPasswords:
+            - email: "{{ admin_email }}"
+              username: "admin"
+              preferredUsername: "admin"
+              hash: "{{ dex_password_hash.stdout | trim }}"
+      no_log: true
+
+    - name: Start Dex container
+      shell: |
+        docker rm -f dex 2>/dev/null || true
+        docker run -d \
+          --name dex \
+          --restart=unless-stopped \
+          -p 5556:5556 \
+          -v {{ omni_dir }}/dex.yaml:/etc/dex/dex.yaml:ro,Z \
+          -v {{ omni_dir }}/server-key.pem:/etc/dex/tls/server-key.pem:ro,Z \
+          -v {{ omni_dir }}/server-chain.pem:/etc/dex/tls/server-chain.pem:ro,Z \
+          ghcr.io/dexidp/dex:v2.41.1 dex serve /etc/dex/dex.yaml
+      changed_when: true
+
+    - name: Wait for Dex OIDC endpoint to be ready
+      uri:
+        url: "https://{{ auth_endpoint }}:5556/.well-known/openid-configuration"
+        validate_certs: false
+        status_code: 200
+      register: dex_health
+      until: dex_health.status == 200
+      retries: 15
+      delay: 5
+
+    # ── Omni Container ──────────────────────────────────────────────────────
+    - name: Fetch latest Omni release tag
+      shell: |
+        curl -sI https://github.com/siderolabs/omni/releases/latest \
+          | grep -i location | awk -F '/' '{print $NF}' | tr -d '\r'
+      register: omni_version
+      changed_when: false
+
+    - name: Start Omni container
+      # Requires --net=host (binds port 443 directly) and NET_ADMIN + /dev/net/tun for WireGuard
+      shell: |
+        docker rm -f omni 2>/dev/null || true
+        docker run -d \
+          --name omni \
+          --net=host \
+          --cap-add=NET_ADMIN \
+          --device /dev/net/tun:/dev/net/tun \
+          --restart=unless-stopped \
+          -v {{ omni_dir }}/ca.pem:/etc/ssl/certs/ca-certificates.crt:ro,Z \
+          -v {{ omni_dir }}/server-key.pem:/server-key.pem:ro,Z \
+          -v {{ omni_dir }}/server-chain.pem:/server-chain.pem:ro,Z \
+          -v {{ omni_dir }}/omni.asc:/omni.asc:ro,Z \
+          -v {{ sqlite_dir }}:/_out/sqlite:rw,Z \
+          ghcr.io/siderolabs/omni:{{ omni_version.stdout | trim }} \
+            --name=omni \
+            --cert=/server-chain.pem \
+            --key=/server-key.pem \
+            --machine-api-cert=/server-chain.pem \
+            --machine-api-key=/server-key.pem \
+            --machine-api-bind-addr=0.0.0.0:8090 \
+            --private-key-source=file:///omni.asc \
+            --event-sink-port=8091 \
+            --bind-addr=0.0.0.0:443 \
+            --k8s-proxy-bind-addr=0.0.0.0:8100 \
+            --advertised-api-url=https://{{ omni_endpoint }}/ \
+            --siderolink-api-advertised-url=https://{{ omni_endpoint }}:8090/ \
+            --siderolink-wireguard-advertised-addr={{ public_ip }}:50180 \
+            --advertised-kubernetes-proxy-url=https://{{ omni_endpoint }}:8100/ \
+            --auth-auth0-enabled=false \
+            --auth-oidc-enabled=true \
+            --auth-oidc-provider-url=https://{{ auth_endpoint }}:5556 \
+            --auth-oidc-client-id=omni \
+            --auth-oidc-client-secret=omni-dex-secret \
+            --auth-oidc-scopes=openid \
+            --auth-oidc-scopes=profile \
+            --auth-oidc-scopes=email \
+            --sqlite-storage-path=/_out/sqlite/omni.db \
+            --initial-users={{ admin_email }}
+      changed_when: true
+
+    - name: Verify containers are running
+      shell: docker ps --format "table {{ '{{' }}.Names{{ '}}' }}\t{{ '{{' }}.Status{{ '}}' }}"
+      register: docker_ps
+      changed_when: false
+
+    - name: Show running containers
+      debug:
+        msg: "{{ docker_ps.stdout_lines }}"
+
+  handlers:
+    - name: Update CA certificates
+      command: update-ca-certificates
