@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: hermes-agent
+      annotations:
+        checksum/config: e5dc0e4e5c8f1548
     spec:
       securityContext:
         seccompProfile:
