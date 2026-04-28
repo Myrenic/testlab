@@ -7,4 +7,4 @@ data:
   config.yaml: |
     model:
       provider: copilot
-      default: gpt-5.4
+      default: gpt-4o-mini
