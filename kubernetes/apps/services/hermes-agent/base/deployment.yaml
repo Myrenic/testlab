@@ -35,6 +35,11 @@ spec:
           securityContext:
             allowPrivilegeEscalation: true
             capabilities:
+              add:
+                - CHOWN
+                - FOWNER
+                - SETGID
+                - SETUID
               drop:
                 - ALL
             runAsNonRoot: false
@@ -72,6 +77,11 @@ spec:
           securityContext:
             allowPrivilegeEscalation: true
             capabilities:
+              add:
+                - CHOWN
+                - FOWNER
+                - SETGID
+                - SETUID
               drop:
                 - ALL
             runAsNonRoot: false
