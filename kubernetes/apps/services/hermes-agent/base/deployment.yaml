@@ -17,6 +17,21 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: config-seed
+          image: alpine:3.19
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /opt/data/.hermes
+              cp /hermes-seed/config.yaml /opt/data/.hermes/config.yaml
+              echo "Applied /opt/data/.hermes/config.yaml from ConfigMap"
+          volumeMounts:
+            - name: data
+              mountPath: /opt/data
+            - name: hermes-config
+              mountPath: /hermes-seed
       containers:
         - name: gateway
           image: nousresearch/hermes-agent@sha256:df3aaef155493d48cfdc318aeae24f2fad7d2506b369aea0adf1cbb082660e50
@@ -26,6 +41,11 @@ spec:
           env:
             - name: HERMES_HOME
               value: /opt/data
+            - name: HERMES_INFERENCE_PROVIDER
+              value: copilot
+          envFrom:
+            - secretRef:
+                name: hermes-agent-secrets
           resources:
             requests:
               cpu: 250m
@@ -92,3 +112,6 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: hermes-agent-data
+        - name: hermes-config
+          configMap:
+            name: hermes-agent-config

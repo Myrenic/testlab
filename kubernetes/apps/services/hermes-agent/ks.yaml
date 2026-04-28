@@ -20,4 +20,8 @@ spec:
         name: cluster-secrets
   dependsOn:
     - name: longhorn
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
   wait: true

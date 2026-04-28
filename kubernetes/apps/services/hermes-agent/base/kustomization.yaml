@@ -5,3 +5,5 @@ resources:
   - deployment.yaml
   - pvc.yaml
   - service.yaml
+  - configmap.yaml
+  - hermes-secrets.sops.yaml
