@@ -33,7 +33,7 @@ spec:
             limits:
               memory: 2Gi
           securityContext:
-            allowPrivilegeEscalation: false
+            allowPrivilegeEscalation: true
             capabilities:
               drop:
                 - ALL
@@ -70,7 +70,7 @@ spec:
             limits:
               memory: 512Mi
           securityContext:
-            allowPrivilegeEscalation: false
+            allowPrivilegeEscalation: true
             capabilities:
               drop:
                 - ALL
