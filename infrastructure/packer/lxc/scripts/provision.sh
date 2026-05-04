@@ -5,6 +5,9 @@ set -euo pipefail
 echo "==> Updating system packages..."
 dnf update -y
 
+echo "==> Enabling EPEL repository..."
+dnf install -y epel-release
+
 echo "==> Installing base packages..."
 dnf install -y \
   git \

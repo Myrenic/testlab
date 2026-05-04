@@ -13,10 +13,6 @@ provider "proxmox" {
   insecure = true
 }
 
-data "http" "github_keys" {
-  url = "https://github.com/Myrenic.keys"
-}
-
 module "test_lxc" {
   source = "../modules/lxc"
 
@@ -32,6 +28,5 @@ module "test_lxc" {
   vlan_id        = var.vlan_id
   ip_address     = var.container_ip
   gateway        = var.container_gw
-  ssh_public_keys = split("\n", trimspace(data.http.github_keys.response_body))
   tags           = ["lxc", "almalinux", "test"]
 }

@@ -4,24 +4,25 @@
 #
 # This script:
 #   1. Downloads AlmaLinux 9 LXC template to Proxmox
-#   2. Creates a temporary container with SSH key
-#   3. Starts the container and waits for SSH
-#   4. Runs Packer provisioning
+#   2. Creates a temporary container
+#   3. Bootstraps SSH via pct exec on the Proxmox host
+#   4. Runs Packer provisioning over SSH
 #   5. Stops container and converts to template
 #
 # Prerequisites:
-#   - curl, jq, ssh-keygen, packer
-#   - Network access to Proxmox API
+#   - curl, jq, ssh-keygen, packer, sshpass
+#   - Network access to Proxmox API and SSH to Proxmox host
 #
 # Usage:
 #   export PROXMOX_URL="https://proxmox.example.com:8006"
 #   export PROXMOX_USERNAME="root@pam"
 #   export PROXMOX_PASSWORD="your-password"
 #   export PROXMOX_NODE="pve"
+#   export PROXMOX_SSH_HOST="proxmox.example.com"  # defaults to host from URL
 #   export BUILD_STORAGE="local-lvm"
 #   export TEMPLATE_STORAGE="local"
-#   export CONTAINER_IP="10.0.0.200/24"
-#   export CONTAINER_GW="10.0.0.1"
+#   export CONTAINER_IP="10.0.3.200/24"
+#   export CONTAINER_GW="10.0.3.1"
 #   export CONTAINER_BRIDGE="vmbr0"
 #   export TEMPLATE_VMID="9000"  # optional, auto-assigned if empty
 #   ./build.sh
@@ -36,22 +37,27 @@ PROXMOX_USERNAME="${PROXMOX_USERNAME:?Set PROXMOX_USERNAME}"
 PROXMOX_PASSWORD="${PROXMOX_PASSWORD:?Set PROXMOX_PASSWORD}"
 PROXMOX_NODE="${PROXMOX_NODE:?Set PROXMOX_NODE}"
 
+# Extract host from PROXMOX_URL for SSH access (strip protocol and port)
+PROXMOX_SSH_HOST="${PROXMOX_SSH_HOST:-$(echo "${PROXMOX_URL}" | sed -E 's|https?://||;s|:[0-9]+$||')}"
+# Extract SSH user from PROXMOX_USERNAME (root@pam -> root)
+PROXMOX_SSH_USER="${PROXMOX_USERNAME%%@*}"
+
 BUILD_STORAGE="${BUILD_STORAGE:-local-lvm}"
 TEMPLATE_STORAGE="${TEMPLATE_STORAGE:-local}"
-CONTAINER_IP="${CONTAINER_IP:?Set CONTAINER_IP (CIDR, e.g., 10.0.0.200/24)}"
+CONTAINER_IP="${CONTAINER_IP:?Set CONTAINER_IP (CIDR, e.g., 10.0.3.200/24)}"
 CONTAINER_GW="${CONTAINER_GW:?Set CONTAINER_GW}"
 CONTAINER_BRIDGE="${CONTAINER_BRIDGE:-vmbr0}"
 CONTAINER_VLAN="${CONTAINER_VLAN:-}"
 TEMPLATE_VMID="${TEMPLATE_VMID:-}"
 TEMPLATE_NAME="${TEMPLATE_NAME:-almalinux-9-base}"
+GITHUB_USER="${GITHUB_USER:-}"
 
-ALMALINUX_TEMPLATE="almalinux-9-default_20231211_amd64.tar.xz"
-TEMPLATE_URL="http://download.proxmox.com/images/system/${ALMALINUX_TEMPLATE}"
+# Template name is auto-discovered from the Proxmox appliance catalog
+ALMALINUX_TEMPLATE=""
 
 # --- Helpers ---
 TMPDIR_BUILD="$(mktemp -d)"
 SSH_KEY_FILE="${TMPDIR_BUILD}/packer_key"
-COOKIE_FILE="${TMPDIR_BUILD}/cookie"
 CSRF_TOKEN=""
 TICKET=""
 
@@ -60,13 +66,18 @@ cleanup() {
   rm -rf "${TMPDIR_BUILD}"
 
   if [[ -n "${BUILD_VMID:-}" ]]; then
-    echo "==> Destroying build container ${BUILD_VMID}..."
-    api_request "DELETE" "/nodes/${PROXMOX_NODE}/lxc/${BUILD_VMID}" --data-urlencode "purge=1" --data-urlencode "force=1" || true
+    echo "==> Stopping and destroying build container ${BUILD_VMID}..."
+    pve_ssh "pct stop ${BUILD_VMID} 2>/dev/null; sleep 2; pct destroy ${BUILD_VMID} --purge 2>/dev/null" || true
   fi
 }
 trap cleanup EXIT
 
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
+
+pve_ssh() {
+  sshpass -p "${PROXMOX_PASSWORD}" ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR \
+    "${PROXMOX_SSH_USER}@${PROXMOX_SSH_HOST}" "$@"
+}
 
 api_auth() {
   log "Authenticating with Proxmox API..."
@@ -120,12 +131,30 @@ wait_for_task() {
 # --- Main ---
 log "Starting AlmaLinux 9 LXC template build..."
 
+# Verify SSH access to Proxmox host
+log "Verifying SSH access to Proxmox host ${PROXMOX_SSH_HOST}..."
+if ! pve_ssh "echo ok" >/dev/null 2>&1; then
+  log "ERROR: Cannot SSH to Proxmox host ${PROXMOX_SSH_HOST} as ${PROXMOX_SSH_USER}"
+  exit 1
+fi
+
 # Generate ephemeral SSH key
 ssh-keygen -t ed25519 -f "${SSH_KEY_FILE}" -N "" -q
 SSH_PUBKEY="$(cat "${SSH_KEY_FILE}.pub")"
 
 # Authenticate
 api_auth
+
+# Discover the latest AlmaLinux 9 template from Proxmox appliance catalog
+log "Discovering latest AlmaLinux 9 template from appliance catalog..."
+ALMALINUX_TEMPLATE=$(api_request "GET" "/nodes/${PROXMOX_NODE}/aplinfo" | \
+  jq -r '[.data[] | select(.template | startswith("almalinux-9-default"))] | sort_by(.version) | last | .template')
+
+if [[ -z "${ALMALINUX_TEMPLATE}" || "${ALMALINUX_TEMPLATE}" == "null" ]]; then
+  log "ERROR: Could not find AlmaLinux 9 template in Proxmox appliance catalog"
+  exit 1
+fi
+log "Found template: ${ALMALINUX_TEMPLATE}"
 
 # Download AlmaLinux template if not present
 log "Ensuring AlmaLinux template is available on ${PROXMOX_NODE}..."
@@ -173,11 +202,9 @@ RESPONSE=$(api_request "POST" "/nodes/${PROXMOX_NODE}/lxc" \
   --data-urlencode "memory=1024" \
   --data-urlencode "cores=2" \
   --data-urlencode "net0=${NET_CONFIG}" \
-  --data-urlencode "ssh-public-keys=${SSH_PUBKEY}" \
   --data-urlencode "start=0" \
   --data-urlencode "unprivileged=1" \
-  --data-urlencode "features=nesting=1" \
-  --data-urlencode "password=packer-build-temp")
+  --data-urlencode "features=nesting=1")
 
 UPID=$(echo "${RESPONSE}" | jq -r '.data')
 wait_for_task "${UPID}"
@@ -188,18 +215,35 @@ RESPONSE=$(api_request "POST" "/nodes/${PROXMOX_NODE}/lxc/${BUILD_VMID}/status/s
 UPID=$(echo "${RESPONSE}" | jq -r '.data')
 wait_for_task "${UPID}"
 
+# Bootstrap SSH inside the container via pct exec
+log "Bootstrapping SSH inside container via pct exec..."
+pve_ssh bash -s <<BOOTSTRAP
+set -e
+pct exec ${BUILD_VMID} -- bash -c '
+  dnf install -y openssh-server
+  ssh-keygen -A
+  mkdir -p /root/.ssh
+  chmod 700 /root/.ssh
+  echo "${SSH_PUBKEY}" > /root/.ssh/authorized_keys
+  chmod 600 /root/.ssh/authorized_keys
+  sed -i "s/#*PermitRootLogin.*/PermitRootLogin prohibit-password/" /etc/ssh/sshd_config
+  systemctl enable --now sshd
+'
+BOOTSTRAP
+log "SSH bootstrap complete."
+
 # Extract IP without CIDR prefix
 CONTAINER_IP_BARE="${CONTAINER_IP%%/*}"
 
 # Wait for SSH
 log "Waiting for SSH on ${CONTAINER_IP_BARE}..."
-for i in $(seq 1 60); do
+for i in $(seq 1 30); do
   if ssh -o StrictHostKeyChecking=no -o ConnectTimeout=2 -i "${SSH_KEY_FILE}" \
     root@"${CONTAINER_IP_BARE}" "echo ready" >/dev/null 2>&1; then
     log "SSH is ready."
     break
   fi
-  if [[ $i -eq 60 ]]; then
+  if [[ $i -eq 30 ]]; then
     log "ERROR: Timed out waiting for SSH"
     exit 1
   fi
@@ -216,6 +260,7 @@ packer build \
   -var "proxmox_password=${PROXMOX_PASSWORD}" \
   -var "container_ip=${CONTAINER_IP_BARE}" \
   -var "ssh_private_key_file=${SSH_KEY_FILE}" \
+  -var "github_user=${GITHUB_USER}" \
   .
 
 # Stop container
@@ -234,11 +279,11 @@ api_request "PUT" "/nodes/${PROXMOX_NODE}/lxc/${BUILD_VMID}/config" \
   --data-urlencode "hostname=${TEMPLATE_NAME}" \
   --data-urlencode "description=AlmaLinux 9 base LXC template - built $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-# Unset the trap since we don't want to delete the template
+# Unset BUILD_VMID so cleanup doesn't destroy the template
 BUILD_VMID=""
 
 log "=========================================="
 log "Template build complete!"
-log "Template VMID: ${TEMPLATE_VMID:-$(api_request "GET" "/cluster/nextid" | jq -r '.data' 2>/dev/null || echo 'check Proxmox UI')}"
+log "Template VMID: ${TEMPLATE_VMID}"
 log "Template Name: ${TEMPLATE_NAME}"
 log "=========================================="

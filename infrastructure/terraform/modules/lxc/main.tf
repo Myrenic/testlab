@@ -44,10 +44,6 @@ resource "proxmox_virtual_environment_container" "lxc" {
         gateway = var.gateway
       }
     }
-
-    user_account {
-      keys = var.ssh_public_keys
-    }
   }
 
   features {
@@ -59,11 +55,5 @@ resource "proxmox_virtual_environment_container" "lxc" {
 
   startup {
     order = var.startup_order
-  }
-
-  lifecycle {
-    ignore_changes = [
-      initialization[0].user_account,
-    ]
   }
 }

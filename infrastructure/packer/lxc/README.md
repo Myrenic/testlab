@@ -9,9 +9,9 @@ Packer-based build pipeline for creating hardened AlmaLinux 9 LXC templates on P
 │  build.sh (Orchestrator)                                    │
 │                                                             │
 │  1. Download AlmaLinux 9 template → Proxmox                 │
-│  2. Create temporary LXC container (SSH key injected)       │
-│  3. Start container, wait for SSH                           │
-│  4. Run Packer (provision via SSH)                          │
+│  2. Create temporary LXC container                          │
+│  3. Bootstrap SSH via pct exec on Proxmox host              │
+│  4. Run Packer provisioning over SSH                        │
 │  5. Stop container → Convert to Proxmox template            │
 └─────────────────────────────────────────────────────────────┘
          │
@@ -21,6 +21,7 @@ Packer-based build pipeline for creating hardened AlmaLinux 9 LXC templates on P
 │  ─ AlmaLinux 9 base                                         │
 │  ─ Packages: git, htop, sudo, curl, wget, vim              │
 │  ─ SSH hardened (key-only, no root password)                │
+│  ─ GitHub SSH keys baked in (optional)                      │
 │  ─ Auto security updates (cron, daily 3AM)                  │
 │  ─ Admin group with passwordless sudo                       │
 └─────────────────────────────────────────────────────────────┘
@@ -34,10 +35,10 @@ Packer-based build pipeline for creating hardened AlmaLinux 9 LXC templates on P
 
 ## Prerequisites
 
-- **Proxmox VE** 7.x+ with API access
+- **Proxmox VE** 7.x+ with API access and SSH access to the host
 - **Packer** 1.9+
 - **OpenTofu/Terraform** 1.5+
-- `curl`, `jq`, `ssh-keygen`, `python3` on the build machine
+- `curl`, `jq`, `ssh-keygen`, `python3`, `sshpass` on the build machine
 
 ## Quick Start
 
@@ -52,10 +53,11 @@ export PROXMOX_PASSWORD="your-password"
 export PROXMOX_NODE="pve"
 export BUILD_STORAGE="local-lvm"
 export TEMPLATE_STORAGE="local"
-export CONTAINER_IP="10.0.0.200/24"
-export CONTAINER_GW="10.0.0.1"
+export CONTAINER_IP="10.0.3.200/24"
+export CONTAINER_GW="10.0.3.1"
 export CONTAINER_BRIDGE="vmbr0"
 export TEMPLATE_VMID="9000"
+export GITHUB_USER="YourGitHubUsername"  # optional, bakes SSH keys into template
 
 ./build.sh
 ```
@@ -112,8 +114,8 @@ Add to your pipeline (e.g., GitHub Actions on a schedule):
 | Category | Details |
 |----------|---------|
 | **OS** | AlmaLinux 9 (RHEL-compatible) |
-| **Packages** | git, htop, sudo, curl, wget, vim, bash-completion, cronie |
-| **SSH** | Key-only auth, root password login disabled, max 3 auth tries |
+| **Packages** | git, htop, sudo, curl, wget, vim, bash-completion, cronie, epel-release |
+| **SSH** | Key-only auth, root password login disabled, max 3 auth tries, GitHub keys baked in |
 | **Updates** | dnf-automatic via cron, daily security updates at 3 AM |
 | **Users** | `admins` group with passwordless sudo |
 | **Security** | SSH agent/TCP forwarding disabled, X11 disabled |
@@ -136,6 +138,7 @@ Add to your pipeline (e.g., GitHub Actions on a schedule):
 | `CONTAINER_VLAN` | ❌ | — | VLAN tag |
 | `TEMPLATE_VMID` | ❌ | auto | Template VMID |
 | `TEMPLATE_NAME` | ❌ | `almalinux-9-base` | Template hostname |
+| `GITHUB_USER` | ❌ | — | GitHub username for SSH key injection |
 
 ### Terraform Module Variables
 

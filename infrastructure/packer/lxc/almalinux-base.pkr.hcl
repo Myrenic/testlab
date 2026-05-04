@@ -34,6 +34,12 @@ variable "ssh_username" {
   description = "SSH user for provisioning"
 }
 
+variable "github_user" {
+  type        = string
+  default     = ""
+  description = "GitHub username to fetch SSH public keys from (optional)"
+}
+
 source "null" "almalinux" {
   communicator  = "ssh"
   ssh_host      = var.container_ip
@@ -58,12 +64,18 @@ build {
   }
 
   provisioner "shell" {
+    script           = "scripts/inject-ssh-keys.sh"
+    environment_vars = ["GITHUB_USER=${var.github_user}"]
+  }
+
+  provisioner "shell" {
     inline = [
       "dnf clean all",
       "rm -rf /tmp/* /var/tmp/*",
       "rm -f /etc/ssh/ssh_host_*",
       "truncate -s 0 /etc/machine-id",
       "rm -f /var/log/*.log /var/log/lastlog /var/log/wtmp /var/log/btmp",
+      "rm -f /root/.bash_history",
       "history -c"
     ]
   }
