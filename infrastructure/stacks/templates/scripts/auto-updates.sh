@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Setup automatic security updates via cron on AlmaLinux 9
+# Setup automatic daily updates via cron on AlmaLinux 9
 set -euo pipefail
 
 echo "==> Installing dnf-automatic..."
 dnf install -y dnf-automatic
 
-echo "==> Configuring dnf-automatic for security updates..."
+echo "==> Configuring dnf-automatic for all updates..."
 cat > /etc/dnf/automatic.conf <<'EOF'
 [commands]
-upgrade_type = security
+upgrade_type = default
 random_sleep = 3600
 download_updates = yes
 apply_updates = yes
@@ -28,7 +28,7 @@ email_host = localhost
 debuglevel = 1
 EOF
 
-echo "==> Creating cron job for daily security updates..."
+echo "==> Creating cron job for daily updates..."
 cat > /etc/cron.d/auto-updates <<'EOF'
 # Run dnf-automatic daily at 3 AM (with random delay up to 1h built into dnf-automatic)
 SHELL=/bin/bash
@@ -38,4 +38,4 @@ EOF
 
 chmod 644 /etc/cron.d/auto-updates
 
-echo "==> Auto-updates configured (daily security updates at 3 AM)."
+echo "==> Auto-updates configured (daily all updates at 3 AM)."
