@@ -113,6 +113,12 @@ variable "enable_tun_device" {
   description = "Pass /dev/net/tun through to the container"
 }
 
+variable "mount" {
+  type        = list(string)
+  default     = []
+  description = "List of allowed mount types inside the container (e.g., nfs;nfsd)"
+}
+
 variable "startup_order" {
   type        = number
   default     = 0

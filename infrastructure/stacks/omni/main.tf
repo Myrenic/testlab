@@ -25,6 +25,7 @@ module "lxc" {
   start_on_boot  = true
   nesting        = true
   keyctl         = true
+  enable_tun_device = true
 }
 
 resource "terraform_data" "bootstrap_ssh" {

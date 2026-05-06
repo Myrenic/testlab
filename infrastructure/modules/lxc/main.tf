@@ -49,6 +49,7 @@ resource "proxmox_virtual_environment_container" "lxc" {
   features {
     nesting = var.nesting
     keyctl  = var.keyctl
+    mount   = length(var.mount) > 0 ? var.mount : null
   }
 
   dynamic "device_passthrough" {

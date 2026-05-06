@@ -203,7 +203,7 @@ RESPONSE=$(api_request "POST" "/nodes/${PROXMOX_NODE}/lxc" \
   --data-urlencode "cores=2" \
   --data-urlencode "net0=${NET_CONFIG}" \
   --data-urlencode "start=0" \
-  --data-urlencode "unprivileged=1" \
+  --data-urlencode "unprivileged=0" \
   --data-urlencode "features=nesting=1")
 
 UPID=$(echo "${RESPONSE}" | jq -r '.data')
