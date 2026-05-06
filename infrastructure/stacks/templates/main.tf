@@ -2,7 +2,7 @@ locals {
   proxmox_ssh_host = split(":", trimprefix(trimprefix(trimsuffix(var.proxmox.url, "/"), "https://"), "http://"))[0]
   proxmox_ssh_user = split("@", var.proxmox.username)[0]
   build_ip_bare    = split("/", var.templates.build_ip)[0]
-  scripts_dir      = "${path.module}/../../packer/lxc/scripts"
+  scripts_dir      = "${path.module}/scripts"
 }
 
 # ─── Base AlmaLinux Template ─────────────────────────────────────────────────
