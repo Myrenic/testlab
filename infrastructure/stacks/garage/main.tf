@@ -18,7 +18,7 @@ module "lxc" {
   disk_size      = var.garage.host.disk_size
   datastore_id   = var.garage.host.datastore_id
   network_bridge = var.garage.host.network_bridge
-  vlan_id        = var.garage.host.vlan_id
+  vlan_id        = nonsensitive(var.garage.host.vlan_id)
   ip_address     = local.container_ip
   gateway        = var.garage.host.gateway
   tags           = var.proxmox.host_tags

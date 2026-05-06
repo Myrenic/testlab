@@ -18,7 +18,7 @@ module "lxc" {
   disk_size      = var.omni.host.disk_size
   datastore_id   = var.omni.host.datastore_id
   network_bridge = var.omni.host.network_bridge
-  vlan_id        = var.omni.host.vlan_id
+  vlan_id        = nonsensitive(var.omni.host.vlan_id)
   ip_address     = local.container_ip
   gateway        = var.omni.host.gateway
   tags           = var.proxmox.host_tags

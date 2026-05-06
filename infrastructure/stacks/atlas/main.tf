@@ -18,7 +18,7 @@ module "lxc" {
   disk_size      = var.atlas.host.disk_size
   datastore_id   = var.atlas.host.datastore_id
   network_bridge = var.atlas.host.network_bridge
-  vlan_id        = var.atlas.host.vlan_id
+  vlan_id        = nonsensitive(var.atlas.host.vlan_id)
   ip_address     = local.container_ip
   gateway        = var.atlas.host.gateway
   tags           = var.proxmox.host_tags

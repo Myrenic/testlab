@@ -18,7 +18,7 @@ module "lxc" {
   disk_size         = var.tailscale.host.disk_size
   datastore_id      = var.tailscale.host.datastore_id
   network_bridge    = var.tailscale.host.network_bridge
-  vlan_id           = var.tailscale.host.vlan_id
+  vlan_id           = nonsensitive(var.tailscale.host.vlan_id)
   ip_address        = local.container_ip
   gateway           = var.tailscale.host.gateway
   tags              = var.proxmox.host_tags
