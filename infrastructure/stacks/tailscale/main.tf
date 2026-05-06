@@ -31,7 +31,6 @@ module "lxc" {
 resource "terraform_data" "bootstrap_ssh" {
   triggers_replace = [
     module.lxc.container_id,
-    sha256(local.bootstrap_public_key),
   ]
 
   provisioner "local-exec" {
@@ -94,6 +93,6 @@ resource "ansible_playbook" "deploy" {
     tailscale_advertise_tags     = join(",", var.tailscale.tailscale.advertise_tags)
   }
 
-  replayable = true
+  replayable = false
   depends_on = [terraform_data.bootstrap_ssh]
 }

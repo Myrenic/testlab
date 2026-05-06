@@ -31,7 +31,6 @@ module "lxc" {
 resource "terraform_data" "bootstrap_ssh" {
   triggers_replace = [
     module.lxc.container_id,
-    sha256(local.bootstrap_public_key),
   ]
 
   provisioner "local-exec" {
@@ -92,6 +91,6 @@ resource "ansible_playbook" "deploy" {
     renew_certs                  = var.renew_certs
   }
 
-  replayable = true
+  replayable = false
   depends_on = [terraform_data.bootstrap_ssh]
 }
