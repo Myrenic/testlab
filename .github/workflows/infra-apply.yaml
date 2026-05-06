@@ -73,7 +73,12 @@ jobs:
       - name: OpenTofu Apply
         working-directory: infrastructure/stacks/${{ matrix.stack }}
         env:
-          SOPS_AGE_KEY_FILE: ${{ github.workspace }}/age.agekey
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
         run: |
+          # Write age key to temp file for sops
+          KEYFILE=$(mktemp)
+          echo "$SOPS_AGE_KEY" > "$KEYFILE"
+          export SOPS_AGE_KEY_FILE="$KEYFILE"
           sops exec-file --filename infra.json ../../infra.json \
             "tofu apply -auto-approve -input=false -compact-warnings -var-file={}"
+          rm -f "$KEYFILE"

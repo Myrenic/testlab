@@ -121,28 +121,11 @@
       register: svc_start
       changed_when: "'started' in svc_start.stdout or 'Starting' in svc_start.stdout"
 
-    # ── Deploy SOPS age key for decryption ─────────────────────────────────
-    - name: Create .sops directory
-      file:
-        path: "{{ runner_dir }}/.sops"
-        state: directory
-        owner: "{{ runner_user }}"
-        group: "{{ runner_user }}"
-        mode: "0700"
-
-    - name: Copy age key for SOPS decryption
-      copy:
-        src: "{{ playbook_dir }}/../../../age.agekey"
-        dest: "{{ runner_dir }}/.sops/age.agekey"
-        owner: "{{ runner_user }}"
-        group: "{{ runner_user }}"
-        mode: "0600"
-
     # ── Runner environment for tofu workflows ──────────────────────────────
     - name: Set runner environment variables
       copy:
         content: |
-          SOPS_AGE_KEY_FILE={{ runner_dir }}/.sops/age.agekey
+          # SOPS_AGE_KEY is injected via GitHub Actions secrets at runtime
         dest: "{{ runner_dir }}/.env"
         owner: "{{ runner_user }}"
         group: "{{ runner_user }}"
