@@ -69,7 +69,12 @@ jobs:
 
       - name: OpenTofu Init
         working-directory: infrastructure/stacks/${{ matrix.stack }}
-        run: tofu init -input=false
+        env:
+          PATH: /usr/local/bin:/usr/bin:/bin
+          HOME: /opt/actions-runner
+        run: |
+          STATE_DIR="/opt/actions-runner/tfstate/${{ matrix.stack }}"
+          tofu init -input=false -backend-config="path=${STATE_DIR}/terraform.tfstate"
 
       - name: OpenTofu Apply
         working-directory: infrastructure/stacks/${{ matrix.stack }}

@@ -26,6 +26,14 @@
           - tar
           - unzip
           - which
+          - ansible-core
+          - python3-pip
+        state: present
+
+    - name: Install Ansible Proxmox provider dependencies
+      pip:
+        name:
+          - ansible
         state: present
 
     - name: Install SOPS
