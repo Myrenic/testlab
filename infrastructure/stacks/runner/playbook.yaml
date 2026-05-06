@@ -62,6 +62,21 @@
         shell: /bin/bash
         create_home: true
 
+    - name: Generate SSH keypair for runner user
+      become: true
+      become_user: "{{ runner_user }}"
+      shell: |
+        mkdir -p {{ runner_dir }}/.ssh
+        chmod 700 {{ runner_dir }}/.ssh
+        ssh-keygen -t ed25519 -C "github-runner@tofu" -f {{ runner_dir }}/.ssh/id_ed25519 -N ""
+      args:
+        creates: "{{ runner_dir }}/.ssh/id_ed25519"
+
+    - name: Install sshpass for Proxmox SSH bootstrap
+      dnf:
+        name: sshpass
+        state: present
+
     # ── Download and install runner ────────────────────────────────────────
     - name: Download GitHub Actions runner
       get_url:
