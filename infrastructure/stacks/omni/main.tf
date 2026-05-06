@@ -8,23 +8,23 @@ locals {
 module "lxc" {
   source = "../../modules/lxc"
 
-  hostname       = var.omni.host.name
-  description    = var.proxmox.host_description
-  template_vmid  = var.omni.host.template_vmid
-  node_name      = var.omni.host.node_name
-  vmid           = try(var.omni.host.vmid, null)
-  cores          = var.omni.host.cores
-  memory         = var.omni.host.memory
-  disk_size      = var.omni.host.disk_size
-  datastore_id   = var.omni.host.datastore_id
-  network_bridge = var.omni.host.network_bridge
-  vlan_id        = nonsensitive(var.omni.host.vlan_id)
-  ip_address     = local.container_ip
-  gateway        = var.omni.host.gateway
-  tags           = var.proxmox.host_tags
-  start_on_boot  = true
-  nesting        = true
-  keyctl         = true
+  hostname          = var.omni.host.name
+  description       = var.proxmox.host_description
+  template_vmid     = var.omni.host.template_vmid
+  node_name         = var.omni.host.node_name
+  vmid              = try(var.omni.host.vmid, null)
+  cores             = var.omni.host.cores
+  memory            = var.omni.host.memory
+  disk_size         = var.omni.host.disk_size
+  datastore_id      = var.omni.host.datastore_id
+  network_bridge    = var.omni.host.network_bridge
+  vlan_id           = nonsensitive(var.omni.host.vlan_id)
+  ip_address        = local.container_ip
+  gateway           = var.omni.host.gateway
+  tags              = var.proxmox.host_tags
+  start_on_boot     = true
+  nesting           = true
+  keyctl            = true
   enable_tun_device = true
 }
 

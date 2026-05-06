@@ -26,6 +26,7 @@ flux get kustomizations --watch
 ## Infra automation runner
 
 OpenTofu automation runs on a self-hosted GitHub Actions runner deployed in-cluster by Flux (`kubernetes/apps/dev-platform/github-runner`).
+Pull requests that touch `infrastructure/**` or `kubernetes/**` now run changed-stack OpenTofu validation, provisioning syntax checks, and `kustomize build` before merge.
 
 Create the GitHub token secret used by ARC (runner registration/auth) in `flux-system`:
 

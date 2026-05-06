@@ -24,8 +24,8 @@ module "lxc" {
   tags           = var.proxmox.host_tags
   start_on_boot  = true
   nesting        = true
-  unprivileged  = false
-  mount         = ["nfs"]
+  unprivileged   = false
+  mount          = ["nfs"]
 }
 
 resource "terraform_data" "bootstrap_ssh" {

@@ -6,6 +6,7 @@ on:
     paths:
       - 'infrastructure/stacks/**'
       - 'infrastructure/modules/**'
+      - 'infrastructure/patches/**'
       - 'infrastructure/infra.json'
 
   workflow_dispatch:
@@ -15,6 +16,13 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-apply-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   detect-changes:
     runs-on: self-hosted
@@ -23,38 +31,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Detect changed stacks
         id: changes
+        env:
+          BASE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+          STACK: ${{ inputs.stack }}
         run: |
-          if [ -n "${{ inputs.stack }}" ]; then
-            echo "stacks=[\"${{ inputs.stack }}\"]" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
-          STACKS=()
-
-          # If modules or infra.json changed, apply all LXC stacks
-          # Note: runner is excluded — it cannot redeploy itself via CI
-          if echo "$CHANGED_FILES" | grep -qE '^infrastructure/(modules/|infra\.json)'; then
-            STACKS=("templates" "tailscale" "atlas" "omni")
+          args=(--mode apply --head-sha "$HEAD_SHA")
+          if [ -n "$STACK" ]; then
+            args+=(--stack "$STACK")
           else
-            # Detect individual stack changes
-            for stack in templates tailscale atlas omni; do
-              if echo "$CHANGED_FILES" | grep -q "^infrastructure/stacks/$stack/"; then
-                STACKS+=("$stack")
-              fi
-            done
+            args+=(--base-sha "$BASE_SHA")
           fi
-
-          if [ ${#STACKS[@]} -eq 0 ]; then
-            echo "stacks=[]" >> "$GITHUB_OUTPUT"
-          else
-            JSON=$(printf '%s\n' "${STACKS[@]}" | jq -R . | jq -sc .)
-            echo "stacks=$JSON" >> "$GITHUB_OUTPUT"
-          fi
+          python3 scripts/detect_infra_changes.py "${args[@]}" >> "$GITHUB_OUTPUT"
 
   apply:
     needs: detect-changes
