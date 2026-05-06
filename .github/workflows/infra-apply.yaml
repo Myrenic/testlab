@@ -72,9 +72,10 @@ jobs:
         env:
           PATH: /usr/local/bin:/usr/bin:/bin
           HOME: /opt/actions-runner
+          AWS_ACCESS_KEY_ID: ${{ secrets.GARAGE_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.GARAGE_SECRET_KEY }}
         run: |
-          STATE_DIR="/opt/actions-runner/tfstate/${{ matrix.stack }}"
-          tofu init -input=false -backend-config="path=${STATE_DIR}/terraform.tfstate"
+          tofu init -input=false
 
       - name: OpenTofu Apply
         working-directory: infrastructure/stacks/${{ matrix.stack }}
@@ -82,6 +83,8 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           PATH: /usr/local/bin:/usr/bin:/bin
           HOME: /opt/actions-runner
+          AWS_ACCESS_KEY_ID: ${{ secrets.GARAGE_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.GARAGE_SECRET_KEY }}
         run: |
           # Write age key to temp file for sops
           KEYFILE=$(mktemp)

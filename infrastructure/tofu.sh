@@ -3,8 +3,12 @@
 # Decrypts infra.json via SOPS, extracts per-stack config, and runs tofu.
 #
 # Usage: ./tofu.sh <stack> <command>
-#   stack:   helios | atlas | omni | tailscale
+#   stack:   helios | atlas | omni | tailscale | templates | garage | runner
 #   command: init | plan | apply | destroy
+#
+# Environment:
+#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY - required for S3 state backend
+#   TF_VAR_github_pat - required for runner stack
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -25,6 +29,16 @@ if [[ ! "$COMMAND" =~ ^(init|plan|apply|destroy)$ ]]; then
 fi
 
 cd "${STACKS_DIR}/${STACK}"
+
+# Stacks using S3 backend need credentials
+if [[ "$STACK" != "garage" && "$STACK" != "runner" ]]; then
+  if [[ -z "${AWS_ACCESS_KEY_ID:-}" || -z "${AWS_SECRET_ACCESS_KEY:-}" ]]; then
+    echo "Error: S3 backend requires AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY" >&2
+    echo "  export AWS_ACCESS_KEY_ID='GK...'" >&2
+    echo "  export AWS_SECRET_ACCESS_KEY='...'" >&2
+    exit 1
+  fi
+fi
 
 # Runner stack requires github_pat passed via environment
 if [[ "$STACK" == "runner" && "$COMMAND" != "init" ]]; then

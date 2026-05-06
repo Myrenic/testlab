@@ -1,0 +1,182 @@
+---
+- name: Deploy Garage S3-compatible Storage
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    garage_version: "1.0.1"
+    garage_data_dir: /var/lib/garage/data
+    garage_meta_dir: /var/lib/garage/meta
+    garage_config_dir: /etc/garage
+    garage_user: garage
+
+  tasks:
+    - name: Wait for LXC SSH to become available
+      wait_for_connection:
+        delay: 10
+        timeout: 600
+
+    - name: Gather facts
+      setup:
+
+    - name: Create garage system user
+      user:
+        name: "{{ garage_user }}"
+        system: true
+        home: /var/lib/garage
+        shell: /sbin/nologin
+        create_home: true
+
+    - name: Create garage directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ garage_user }}"
+        group: "{{ garage_user }}"
+        mode: "0750"
+      loop:
+        - "{{ garage_data_dir }}"
+        - "{{ garage_meta_dir }}"
+        - "{{ garage_config_dir }}"
+
+    - name: Download Garage binary
+      shell: |
+        curl -fsSL -o /usr/local/bin/garage "https://garagehq.deuxfleurs.fr/_releases/v{{ garage_version }}/x86_64-unknown-linux-musl/garage"
+        chmod 0755 /usr/local/bin/garage
+      args:
+        creates: /usr/local/bin/garage
+
+    - name: Create Garage configuration
+      copy:
+        dest: "{{ garage_config_dir }}/garage.toml"
+        owner: "{{ garage_user }}"
+        group: "{{ garage_user }}"
+        mode: "0640"
+        content: |
+          metadata_dir = "{{ garage_meta_dir }}"
+          data_dir = "{{ garage_data_dir }}"
+          db_engine = "sqlite"
+
+          replication_factor = 1
+          rpc_bind_addr = "[::]:3901"
+          rpc_public_addr = "{{ garage_listen_addr }}:3901"
+          rpc_secret = "{{ garage_rpc_secret }}"
+
+          [s3_api]
+          s3_region = "{{ garage_s3_region }}"
+          api_bind_addr = "[::]:3900"
+          root_domain = ".s3.garage.local"
+
+          [s3_web]
+          bind_addr = "[::]:3902"
+          root_domain = ".web.garage.local"
+
+          [admin]
+          api_bind_addr = "0.0.0.0:3903"
+          admin_token = "{{ garage_admin_token }}"
+      register: garage_config
+
+    - name: Create Garage systemd service
+      copy:
+        dest: /etc/systemd/system/garage.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Garage S3-compatible Object Storage
+          After=network-online.target
+          Wants=network-online.target
+
+          [Service]
+          Type=simple
+          User={{ garage_user }}
+          ExecStart=/usr/local/bin/garage -c {{ garage_config_dir }}/garage.toml server
+          Restart=on-failure
+          RestartSec=5
+          StateDirectory=garage
+          ProtectSystem=strict
+          ReadWritePaths={{ garage_data_dir }} {{ garage_meta_dir }}
+
+          [Install]
+          WantedBy=multi-user.target
+      register: garage_service
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: true
+      when: garage_service.changed
+
+    - name: Start and enable Garage
+      systemd:
+        name: garage
+        state: started
+        enabled: true
+
+    - name: Restart Garage if config changed
+      systemd:
+        name: garage
+        state: restarted
+      when: garage_config.changed
+
+    - name: Wait for Garage API to be ready
+      wait_for:
+        host: "{{ garage_listen_addr }}"
+        port: 3901
+        delay: 3
+        timeout: 30
+
+    - name: Get Garage node ID
+      command: /usr/local/bin/garage -c {{ garage_config_dir }}/garage.toml node id -q
+      register: garage_node_id
+      changed_when: false
+      become_user: "{{ garage_user }}"
+
+    - name: Get current cluster layout
+      command: /usr/local/bin/garage -c {{ garage_config_dir }}/garage.toml layout show
+      register: garage_layout
+      changed_when: false
+      become_user: "{{ garage_user }}"
+
+    - name: Assign node to layout
+      command: >
+        /usr/local/bin/garage -c {{ garage_config_dir }}/garage.toml
+        layout assign {{ garage_node_id.stdout | trim | split('@') | first }}
+        --capacity 10GB --zone dc1
+      when: "'NO ROLE ASSIGNED' in garage_layout.stdout"
+      become_user: "{{ garage_user }}"
+
+    - name: Apply layout
+      command: /usr/local/bin/garage -c {{ garage_config_dir }}/garage.toml layout apply --version 1
+      when: "'NO ROLE ASSIGNED' in garage_layout.stdout"
+      become_user: "{{ garage_user }}"
+
+    - name: Check if access key exists
+      command: /usr/local/bin/garage -c {{ garage_config_dir }}/garage.toml key list
+      register: garage_keys
+      changed_when: false
+      become_user: "{{ garage_user }}"
+
+    - name: Create S3 access key
+      command: >
+        /usr/local/bin/garage -c {{ garage_config_dir }}/garage.toml
+        key create opentofu
+      register: garage_key_created
+      when: "'opentofu' not in garage_keys.stdout"
+      become_user: "{{ garage_user }}"
+
+    - name: Check if tfstate bucket exists
+      command: /usr/local/bin/garage -c {{ garage_config_dir }}/garage.toml bucket list
+      register: garage_buckets
+      changed_when: false
+      become_user: "{{ garage_user }}"
+
+    - name: Create tfstate bucket
+      command: /usr/local/bin/garage -c {{ garage_config_dir }}/garage.toml bucket create tfstate
+      when: "'tfstate' not in garage_buckets.stdout"
+      become_user: "{{ garage_user }}"
+
+    - name: Grant access key permissions on tfstate bucket
+      command: >
+        /usr/local/bin/garage -c {{ garage_config_dir }}/garage.toml
+        bucket allow --read --write --owner tfstate --key opentofu
+      when: "'tfstate' not in garage_buckets.stdout"
+      become_user: "{{ garage_user }}"
