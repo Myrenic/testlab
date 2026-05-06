@@ -91,7 +91,7 @@ variable "start_on_boot" {
 
 variable "unprivileged" {
   type        = bool
-  default     = true
+  default     = false
   description = "Run as unprivileged container"
 }
 
