@@ -81,7 +81,7 @@ resource "ansible_playbook" "deploy" {
     ansible_python_interpreter   = "/usr/bin/python3"
     ansible_ssh_private_key_file = "~/.ssh/id_ed25519"
     ansible_ssh_extra_args       = "-o StrictHostKeyChecking=no"
-    github_pat                   = var.runner.runner.github_pat
+    github_pat                   = var.github_pat
     github_repo                  = var.runner.runner.github_repo
     runner_labels                = var.runner.runner.labels
   }

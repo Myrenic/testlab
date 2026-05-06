@@ -37,11 +37,12 @@ jobs:
           STACKS=()
 
           # If modules or infra.json changed, apply all LXC stacks
+          # Note: runner is excluded — it cannot redeploy itself via CI
           if echo "$CHANGED_FILES" | grep -qE '^infrastructure/(modules/|infra\.json)'; then
-            STACKS=("templates" "tailscale" "atlas" "omni" "runner")
+            STACKS=("templates" "tailscale" "atlas" "omni")
           else
             # Detect individual stack changes
-            for stack in templates tailscale atlas omni runner; do
+            for stack in templates tailscale atlas omni; do
               if echo "$CHANGED_FILES" | grep -q "^infrastructure/stacks/$stack/"; then
                 STACKS+=("$stack")
               fi

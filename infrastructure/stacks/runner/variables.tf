@@ -28,11 +28,16 @@ variable "runner" {
       vlan_id        = optional(number, 0)
     })
     runner = object({
-      github_pat  = string
       github_repo = optional(string, "myrenic/testlab")
       labels      = optional(string, "self-hosted,linux,tofu")
     })
   })
   sensitive   = true
   description = "Runner stack configuration"
+}
+
+variable "github_pat" {
+  type        = string
+  sensitive   = true
+  description = "GitHub PAT for runner registration (pass via TF_VAR_github_pat)"
 }

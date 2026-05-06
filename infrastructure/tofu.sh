@@ -26,6 +26,15 @@ fi
 
 cd "${STACKS_DIR}/${STACK}"
 
+# Runner stack requires github_pat passed via environment
+if [[ "$STACK" == "runner" && "$COMMAND" != "init" ]]; then
+  if [[ -z "${TF_VAR_github_pat:-}" ]]; then
+    echo "Error: Runner stack requires TF_VAR_github_pat environment variable" >&2
+    echo "  export TF_VAR_github_pat='ghp_...'" >&2
+    exit 1
+  fi
+fi
+
 case "$COMMAND" in
   init)
     tofu init
