@@ -75,6 +75,7 @@ jobs:
         working-directory: infrastructure/stacks/${{ matrix.stack }}
         env:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
+          PATH: /usr/local/bin:/usr/bin:/bin
         run: |
           # Write age key to temp file for sops
           KEYFILE=$(mktemp)
