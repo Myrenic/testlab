@@ -1,0 +1,189 @@
+{
+	"proxmox": {
+		"url": "ENC[AES256_GCM,data:VzZ7Ka846khH17pptYWuh9ZbueAXww==,iv:Y2ReWlq70FMy2wq6bKNKGpOm5zcBxPnFhXJc1vvNeCo=,tag:oTuS4mmdypHxG+7i2aaLYw==,type:str]",
+		"download_datastore_id": "local",
+		"host_description": "Managed by OpenTofu",
+		"host_tags": [
+			"IaC"
+		],
+		"username": "ENC[AES256_GCM,data:81K9SIceDWg=,iv:OzFu2lp46uZ/D5gFY6OFSLlfx7s6TsDoSfS/ra7kbR4=,tag:grANW61xy8PSU9vocXen5g==,type:str]",
+		"password": "ENC[AES256_GCM,data:d2GmE7Tn6CXtb3St,iv:Y6CQ+nmZkUO5wDgm93blnVzkvJXAMTplqvr8owUUBII=,tag:zRTdHtpHFZw7ndEC+neeSw==,type:str]"
+	},
+	"helios": {
+		"hosts": {
+			"control10": {
+				"name": "control10",
+				"cores": 10,
+				"memory": 12000,
+				"ip_addr": "ENC[AES256_GCM,data:rNVf/mhBEp87rA==,iv:JmzcT/bfjCGXpAL3P1JfhYsFetZh3e/muLUa+CcVAWE=,tag:imDJXFRCiyl4C73ocsU5Yg==,type:str]",
+				"gateway": "ENC[AES256_GCM,data:gG4REsze9BPx,iv:zOlzqa4DXl72iI58vRa2spSsMtpCYp2BQGm5Lwxq58A=,tag:7MKD7EVzTcvy/AB3mgWttw==,type:str]",
+				"cidr": "/24",
+				"node_name": "node10",
+				"network_bridge": "vmbr0",
+				"vlan_id": 69,
+				"datastore_id": "nvme",
+				"disk_size": 230
+			},
+			"control11": {
+				"name": "control11",
+				"cores": 10,
+				"memory": 12000,
+				"ip_addr": "ENC[AES256_GCM,data:86oCXBS6zA8sWQ==,iv:2sXHlttQtEbVLC69du7MTv5U8YHtGgn9xIH+LRVxeM4=,tag:aukhUJAcxVN3TweOBEyKrQ==,type:str]",
+				"gateway": "ENC[AES256_GCM,data:iF4NPYjdCCzC,iv:WYs13MNxxmvda05VKUXogJ4KiGuKeWg2R3ZsOmjgSLQ=,tag:Ra+HVRwMAmpE7t0Ult3QAQ==,type:str]",
+				"cidr": "/24",
+				"node_name": "node11",
+				"network_bridge": "vmbr0",
+				"vlan_id": 69,
+				"datastore_id": "nvme",
+				"disk_size": 230
+			},
+			"control12": {
+				"name": "control12",
+				"cores": 10,
+				"memory": 22001,
+				"ip_addr": "ENC[AES256_GCM,data:BRFxMvfQWO5t1w==,iv:Yl0OhIfiVea5/EkUMkfuk0Qz7Mw60f+5a2MTXnkqv7E=,tag:ys6YZ8bc5BFck1J7sqsERA==,type:str]",
+				"gateway": "ENC[AES256_GCM,data:eYNxVfJ9aef6,iv:oiqFJ5XVbGDpwcyIXaX9AiabSe2+a48hWZrqfK0JVgw=,tag:B737516ZertqxEs0BsM79A==,type:str]",
+				"cidr": "/24",
+				"node_name": "node12",
+				"network_bridge": "vmbr0",
+				"vlan_id": 69,
+				"datastore_id": "nvme",
+				"disk_size": 230
+			}
+		},
+		"talos": {
+			"cluster_name": "helios",
+			"version": "v1.12.5",
+			"control_plane_identifier": "control",
+			"worker_identifier": "worker",
+			"img_id": "1aa40873826abb48bc6f6ffbe2c80ab33347a02b6779827977e194e0cfa063d3",
+			"vip": "10.0.69.13",
+			"vip_interface": "eth0"
+		}
+	},
+	"atlas": {
+		"host": {
+			"name": "atlas",
+			"template_vmid": 9000,
+			"ip_addr": "ENC[AES256_GCM,data:bDP+MF0bmmC4RA==,iv:v3UHRKAQdnJGKBL57JdgAFiCVC/OPzvxM3RW4UHW6do=,tag:i6RelPKwwgsURT3+nAk4BQ==,type:str]",
+			"gateway": "ENC[AES256_GCM,data:DflmDQBIR3Mz,iv:rGSa6/kDw/UTYZjig7mytH60FdszVWJ4eX4Dbd803zw=,tag:/q/pm9PU9J1ignED+Ujl5g==,type:str]",
+			"cidr": "/24",
+			"node_name": "pve",
+			"network_bridge": "vmbr0",
+			"datastore_id": "local-lvm",
+			"vlan_id": 69,
+			"cores": 4,
+			"memory": 4096,
+			"disk_size": 64
+		},
+		"atlas": {
+			"nfs_export_network": "10.0.69.0/24",
+			"nfs_exports": [
+				{
+					"path": "/mnt/data/config"
+				},
+				{
+					"path": "/mnt/data/backup"
+				},
+				{
+					"path": "/mnt/data/camera"
+				}
+			]
+		}
+	},
+	"omni": {
+		"host": {
+			"name": "omni",
+			"template_vmid": 9001,
+			"ip_addr": "ENC[AES256_GCM,data:EYU0PWg2lTAVgg==,iv:FCnCqvqSXEYe+9H5aqm/cwcwF647rm0MK6E1DB94a7A=,tag:RvJ9IO+qzM4MAZXLRXr9nA==,type:str]",
+			"gateway": "ENC[AES256_GCM,data:kUR5F+xviS1/,iv:wddGZM02N0vlrStGQ23m9FxAYw6+6p1wMWhURn8owG4=,tag:tpHYYelL3qcGwnSqRHLBFA==,type:str]",
+			"cidr": "/24",
+			"node_name": "pve",
+			"network_bridge": "vmbr0",
+			"datastore_id": "local-lvm",
+			"vlan_id": 69,
+			"cores": 4,
+			"memory": 4096,
+			"disk_size": 64
+		},
+		"omni": {
+			"endpoint": "ENC[AES256_GCM,data:w4LCR8uqnd33FA==,iv:oGD7YoLtejzVOu7giXc9jOBqKQCjdfp/sCAoe1Z432I=,tag:Tj6SgCAsCAlSNZZnVIsd7g==,type:str]",
+			"auth_endpoint": "ENC[AES256_GCM,data:8NZ3aQKdB8At1A==,iv:23aQcrkJ8qu5ZxcJX9PlIpHQ2N8kGDfBwVm6dyCn9P4=,tag:elrmVJKiONyZrc2h6Pbd1A==,type:str]",
+			"admin_email": "admin@example.com",
+			"admin_password": "ENC[AES256_GCM,data:AkVx2W7KzMp1BV32,iv:6aoDoF8UxyxwdXvfzsECudfjGfCKQEB00rEql/OOEu8=,tag:q9wHsjgifIx7r2quBdPV3w==,type:str]",
+			"public_ip": "ENC[AES256_GCM,data:qRsqg3AolW30Rw==,iv:jJxWzfChyi1jL4Jxz8OtlZ8nU2RsskvwsJcVgwuXexU=,tag:gUmhdGgrfzUXdygaDF5i4w==,type:str]",
+			"omni_version": ""
+		}
+	},
+	"tailscale": {
+		"host": {
+			"name": "tailscale",
+			"template_vmid": 9000,
+			"ip_addr": "ENC[AES256_GCM,data:9fx0y2+HpAyQ,iv:n52EAKiqPFUjNTsR0fJxRuWAxxjdD1TO87C9cCOmPOw=,tag:piHsGfcmcG+Ricy0o8+BWw==,type:str]",
+			"gateway": "ENC[AES256_GCM,data:/16TIMbgvJU=,iv:T/wsfL9xSZQ4DyajyD8fmhOgRd7eQogENWlC2OZ0RfQ=,tag:SnzM8k6BSkxCW9TMlf/ymQ==,type:str]",
+			"cidr": "/24",
+			"node_name": "pve",
+			"network_bridge": "vmbr0",
+			"datastore_id": "local-lvm",
+			"vlan_id": 0,
+			"cores": 1,
+			"memory": 1024,
+			"disk_size": 8,
+			"startup_order": 1
+		},
+		"tailscale": {
+			"auth_key": "",
+			"force_reauth_with_auth_key": false,
+			"hostname": "tailscale",
+			"ssh": true,
+			"advertise_exit_node": true,
+			"accept_dns": false,
+			"accept_routes": false,
+			"advertise_routes": [],
+			"advertise_tags": []
+		}
+	},
+	"templates": {
+		"node_name": "pve",
+		"build_storage": "local-lvm",
+		"template_storage": "local",
+		"build_ip": "10.0.3.200/24",
+		"build_gateway": "10.0.3.1",
+		"build_bridge": "vmbr0",
+		"base_vmid": 9000,
+		"docker_vmid": 9001,
+		"github_user": "Myrenic"
+	},
+	"runner": {
+		"host": {
+			"name": "runner",
+			"ip_addr": "ENC[AES256_GCM,data:SO2toPuCM2oU,iv:blQkFqf2uEhj7lmuZSdUB4iyGVVKhZpT3Dz2vL8UqyE=,tag:yMJQML3mnzEVT47Zx4N1Kw==,type:str]",
+			"cidr": "/24",
+			"gateway": "ENC[AES256_GCM,data:k1VTZhu0ffk=,iv:K149vcy1CoT5b/vev2WV477+v6QvQyonQoWdclPsiKk=,tag:F05XT/+45k+eEGTSVlbnoQ==,type:str]",
+			"template_vmid": 9000,
+			"node_name": "pve",
+			"cores": 2,
+			"memory": 2048,
+			"disk_size": 16,
+			"datastore_id": "local-lvm",
+			"network_bridge": "vmbr0",
+			"vlan_id": 0
+		},
+		"runner": {
+			"github_repo": "myrenic/testlab",
+			"labels": "self-hosted,linux,tofu"
+		}
+	},
+	"sops": {
+		"age": [
+			{
+				"recipient": "age10qpu76yk6rvyaunmsadkej3l0pwuk4mn4uhxnem4cyl9zjrucgmsndh72v",
+				"enc": "-----BEGIN AGE ENCRYPTED FILE-----\nYWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSA2bkZBeVRXZWM3TmJrTlNL\naW85b1hKTGpWMk81ZE5jV2k0dVdDWDloc1dZCmZONlNrSlRrU0RNUXBEVnlJTWIy\nWkYwblk1RGFuK0o4bVdvMzUzTDBLRE0KLS0tIHYwSEluQkZxN1U3V2ZZY1JXTTNj\nalFOVzZFam5HUTkyYm1BZk1abUY2a2MKQ4opAxlyUviFuX1HApg+88PGDimvlqAd\n6ioLW/ujL7SG4fPUOUr9OyR4SoVkbnVrV3IJFdKp1BFSluM0a6BOGA==\n-----END AGE ENCRYPTED FILE-----\n"
+			}
+		],
+		"lastmodified": "2026-05-06T07:35:28Z",
+		"mac": "ENC[AES256_GCM,data:WTzHJllnfo3SAbijXlbMbz6mz0Gm3aMj/MxcOY0svdjJSpC8Bi7HJRSp6pGBDHg1KK3ST/ddFnQkCVgRW+Rs3GFvBRmXvOHjGN+q7gI+EoMuCzWJPbiQWoxoEbqNhR78SrMttw3xjl5I+hdLrn8loD30pbli2Vn9B7nzhvnSHns=,iv:n8IZtm9tHKPCdB9KiM0WGUDLBqQ0yiHbqx1Ci9Hueb4=,tag:iWEblghnPNn9Oan1mGxlbA==,type:str]",
+		"encrypted_regex": "^(password|username|ip_addr|gateway|url|auth_key|admin_password|public_ip|endpoint|auth_endpoint)$",
+		"version": "3.10.2"
+	}
+}

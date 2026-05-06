@@ -1,0 +1,9 @@
+# OpenTofu / Terraform
+**/.terraform/
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/.terraform.lock.hcl
+**/terraform.auto.tfvars
+
+# SOPS-encrypted config (tracked separately)
+!infra.json.example

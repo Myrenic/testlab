@@ -1,0 +1,69 @@
+terraform {
+  required_providers {
+    proxmox = {
+      source = "bpg/proxmox"
+    }
+  }
+}
+
+resource "proxmox_virtual_environment_container" "lxc" {
+  description = var.description
+  node_name   = var.node_name
+  vm_id       = var.vmid
+  tags        = var.tags
+
+  clone {
+    vm_id = var.template_vmid
+  }
+
+  cpu {
+    cores = var.cores
+  }
+
+  memory {
+    dedicated = var.memory
+  }
+
+  disk {
+    datastore_id = var.datastore_id
+    size         = var.disk_size
+  }
+
+  network_interface {
+    name    = "eth0"
+    bridge  = var.network_bridge
+    vlan_id = var.vlan_id != 0 ? var.vlan_id : null
+  }
+
+  initialization {
+    hostname = var.hostname
+
+    ip_config {
+      ipv4 {
+        address = var.ip_address
+        gateway = var.gateway
+      }
+    }
+  }
+
+  features {
+    nesting = var.nesting
+    keyctl  = var.keyctl
+  }
+
+  dynamic "device_passthrough" {
+    for_each = var.enable_tun_device ? [1] : []
+
+    content {
+      path = "/dev/net/tun"
+    }
+  }
+
+  start_on_boot = var.start_on_boot
+  started       = var.start_on_create
+  unprivileged  = var.unprivileged
+
+  startup {
+    order = var.startup_order
+  }
+}

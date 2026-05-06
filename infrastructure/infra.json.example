@@ -1,0 +1,125 @@
+{
+  "proxmox": {
+    "url": "https://x.x.x.x:8006/",
+    "username": "root@pam",
+    "password": "changeme",
+    "download_datastore_id": "local",
+    "host_description": "Managed by OpenTofu",
+    "host_tags": ["tofu"]
+  },
+  "helios": {
+    "hosts": {
+      "control01": {
+        "name": "control01",
+        "cores": 4,
+        "memory": 8096,
+        "ip_addr": "x.x.x.x",
+        "gateway": "x.x.x.x",
+        "cidr": "/24",
+        "node_name": "node1",
+        "network_bridge": "vmbr0",
+        "vlan_id": 69,
+        "datastore_id": "nvme",
+        "disk_size": 50
+      },
+      "worker01": {
+        "name": "worker01",
+        "cores": 4,
+        "memory": 8096,
+        "ip_addr": "x.x.x.x",
+        "gateway": "x.x.x.x",
+        "cidr": "/24",
+        "node_name": "node1",
+        "network_bridge": "vmbr0",
+        "vlan_id": 69,
+        "datastore_id": "nvme",
+        "disk_size": 50
+      }
+    },
+    "talos": {
+      "cluster_name": "helios",
+      "version": "v1.x.x",
+      "control_plane_identifier": "control",
+      "worker_identifier": "worker",
+      "img_id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "vip": "x.x.x.x",
+      "vip_interface": "eth0"
+    }
+  },
+  "atlas": {
+    "host": {
+      "name": "atlas",
+      "template_vmid": 9000,
+      "ip_addr": "x.x.x.x",
+      "gateway": "x.x.x.x",
+      "cidr": "/24",
+      "node_name": "node1",
+      "network_bridge": "vmbr0",
+      "datastore_id": "local-lvm",
+      "vlan_id": 69,
+      "cores": 4,
+      "memory": 4096,
+      "disk_size": 64
+    },
+    "atlas": {
+      "nfs_export_network": "10.0.69.0/24",
+      "nfs_exports": [
+        { "path": "/mnt/data/config" },
+        { "path": "/mnt/data/backup" },
+        { "path": "/mnt/data/camera" }
+      ]
+    }
+  },
+  "omni": {
+    "host": {
+      "name": "omni",
+      "template_vmid": 9000,
+      "ip_addr": "x.x.x.x",
+      "gateway": "x.x.x.x",
+      "cidr": "/24",
+      "node_name": "node1",
+      "network_bridge": "vmbr0",
+      "datastore_id": "local-lvm",
+      "vlan_id": 69,
+      "cores": 4,
+      "memory": 4096,
+      "disk_size": 64
+    },
+    "omni": {
+      "endpoint": "omni.example.com",
+      "auth_endpoint": "omni.example.com",
+      "admin_email": "admin@example.com",
+      "admin_password": "changeme",
+      "public_ip": "1.2.3.4",
+      "omni_version": "v1.7.0"
+    }
+  },
+  "tailscale": {
+    "host": {
+      "name": "tailscale",
+      "template_vmid": 9000,
+      "ip_addr": "x.x.x.x",
+      "gateway": "x.x.x.x",
+      "cidr": "/24",
+      "node_name": "node1",
+      "network_bridge": "vmbr0",
+      "datastore_id": "local-lvm",
+      "vlan_id": 0,
+      "cores": 1,
+      "memory": 1024,
+      "disk_size": 8,
+      "startup_order": 1
+    },
+    "tailscale": {
+      "auth_key": "",
+      "force_reauth_with_auth_key": false,
+      "hostname": "tailscale",
+      "ssh": true,
+      "advertise_exit_node": true,
+      "accept_dns": false,
+      "accept_routes": false,
+      "advertise_routes": [],
+      "advertise_tags": []
+    }
+  }
+}

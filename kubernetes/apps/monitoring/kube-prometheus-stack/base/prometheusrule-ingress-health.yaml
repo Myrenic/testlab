@@ -21,7 +21,7 @@ spec:
             avg_over_time(probe_success{job="ingress-health", instance!="https://example.invalid"}[10m]) < 1
           for: 10m
           labels:
-            severity: warning
+            severity: critical
           annotations:
             summary: Ingress endpoint is failing health probes
             description: The ingress target {{ $labels.instance }} has failed HTTPS probes for at least 10 minutes.

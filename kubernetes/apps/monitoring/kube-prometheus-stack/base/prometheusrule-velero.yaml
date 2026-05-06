@@ -17,7 +17,7 @@ spec:
             increase(velero_backup_validation_failure_total[6h]) > 0
           for: 15m
           labels:
-            severity: warning
+            severity: critical
           annotations:
             summary: Velero backup reported failures
             description: Velero schedule {{ $labels.schedule }} has backup failures in the last 6 hours.
@@ -35,7 +35,7 @@ spec:
             )
           for: 2h
           labels:
-            severity: warning
+            severity: critical
           annotations:
             summary: Velero backup is stale
             description: Velero schedule {{ $labels.schedule }} has not completed successfully within 1.5x its expected interval.
@@ -43,7 +43,7 @@ spec:
           expr: min_over_time(velero_backup_location_status_gauge[15m]) < 1
           for: 15m
           labels:
-            severity: warning
+            severity: critical
           annotations:
             summary: Velero backup storage location unavailable
             description: Velero backup location {{ $labels.backup_location_name }} has been unavailable for at least 15 minutes.
@@ -80,7 +80,7 @@ spec:
             kube_deployment_status_replicas_available{namespace="velero", deployment="velero"} < 1
           for: 15m
           labels:
-            severity: warning
+            severity: critical
           annotations:
             summary: Velero server is unavailable
             description: The velero deployment has had no available replicas for at least 15 minutes.

@@ -12,7 +12,7 @@ spec:
           expr: kube_node_status_condition{condition="Ready",status="true"} == 0
           for: 10m
           labels:
-            severity: warning
+            severity: critical
           annotations:
             summary: Kubernetes node is not Ready
             description: Node {{ $labels.node }} has been NotReady for over 10 minutes.

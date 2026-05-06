@@ -1,0 +1,55 @@
+---
+- name: Configure Atlas NFS Server
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Wait for LXC SSH to become available
+      wait_for_connection:
+        delay: 10
+        timeout: 600
+
+    - name: Gather facts
+      setup:
+
+    - name: Install NFS packages
+      dnf:
+        name:
+          - nfs-utils
+        state: present
+
+    - name: Parse NFS exports variable
+      set_fact:
+        nfs_export_list: "{{ nfs_exports | from_json }}"
+
+    - name: Create export directories
+      file:
+        path: "{{ item.path }}"
+        state: directory
+        owner: "{{ item.owner | default(65534) }}"
+        group: "{{ item.group | default(65534) }}"
+        mode: "{{ item.mode | default('0775') }}"
+      loop: "{{ nfs_export_list }}"
+
+    - name: Configure NFS exports
+      copy:
+        dest: /etc/exports
+        content: |
+          {% for export in nfs_export_list %}
+          {{ export.path }} {{ nfs_export_network }}(rw,sync,no_subtree_check,no_root_squash)
+          {% endfor %}
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Reload NFS exports
+
+    - name: Enable and start NFS server
+      systemd:
+        name: nfs-server
+        enabled: true
+        state: started
+
+  handlers:
+    - name: Reload NFS exports
+      command: exportfs -ra
