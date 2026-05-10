@@ -1,0 +1,228 @@
+---
+- name: Deploy Home Assistant voice stack
+  hosts: all
+  become: true
+  gather_facts: false
+  vars:
+    voice_dir: /opt/homeassistant-voice
+    whisper_data_dir: "{{ voice_dir }}/whisper"
+    piper_data_dir: "{{ voice_dir }}/piper"
+    openwakeword_data_dir: "{{ voice_dir }}/openwakeword"
+    ollama_data_dir: "{{ voice_dir }}/ollama"
+
+  tasks:
+    - name: Wait for LXC SSH to become available
+      wait_for_connection:
+        delay: 10
+        timeout: 600
+
+    - name: Gather facts
+      setup:
+
+    - name: Install prerequisite packages
+      dnf:
+        name:
+          - ca-certificates
+          - curl
+        state: present
+
+    - name: Ensure Docker is started and enabled
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Create voice working directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ voice_dir }}"
+        - "{{ whisper_data_dir }}"
+        - "{{ piper_data_dir }}"
+        - "{{ openwakeword_data_dir }}"
+        - "{{ ollama_data_dir }}"
+
+    - name: Write docker-compose.yml
+      copy:
+        dest: "{{ voice_dir }}/docker-compose.yml"
+        mode: "0644"
+        content: |
+          services:
+            whisper:
+              image: rhasspy/wyoming-whisper:latest
+              restart: unless-stopped
+              command:
+                - --model
+                - {{ whisper_model }}
+                - --language
+                - {{ whisper_language }}
+              ports:
+                - "10300:10300"
+              volumes:
+                - ./whisper:/data
+
+            piper:
+              image: rhasspy/wyoming-piper:latest
+              restart: unless-stopped
+              command:
+                - --voice
+                - {{ piper_voice }}
+              ports:
+                - "10200:10200"
+              volumes:
+                - ./piper:/data
+
+            openwakeword:
+              image: rhasspy/wyoming-openwakeword:latest
+              restart: unless-stopped
+              command:
+                - --preload-model
+                - {{ wake_word_model }}
+              ports:
+                - "10400:10400"
+              volumes:
+                - ./openwakeword:/data
+
+            ollama:
+              image: ollama/ollama:latest
+              restart: unless-stopped
+              ports:
+                - "11434:11434"
+              environment:
+                OLLAMA_HOST: 0.0.0.0:11434
+                OLLAMA_KEEP_ALIVE: "{{ ollama_keep_alive }}"
+                OLLAMA_MAX_LOADED_MODELS: "1"
+                OLLAMA_NUM_PARALLEL: "{{ ollama_num_parallel }}"
+                OLLAMA_CONTEXT_LENGTH: "{{ ollama_context_length }}"
+              volumes:
+                - ./ollama:/root/.ollama
+
+    - name: Write Ollama warmup script
+      copy:
+        dest: /usr/local/bin/homeassistant-voice-warmup
+        mode: "0755"
+        content: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+          MODEL="${1:?model required}"
+          KEEP_ALIVE="${2:--1}"
+          API_URL="${3:-http://127.0.0.1:11434}"
+
+          for _ in $(seq 1 60); do
+            if curl -fsS "${API_URL}/api/tags" >/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+
+          curl -fsS "${API_URL}/api/generate" \
+            -H 'Content-Type: application/json' \
+            -d @- >/dev/null <<EOF
+          {
+            "model": "${MODEL}",
+            "prompt": "Reply with the single word ready.",
+            "stream": false,
+            "keep_alive": "${KEEP_ALIVE}"
+          }
+          EOF
+
+    - name: Ensure compose stack is running
+      shell: docker compose -f {{ voice_dir }}/docker-compose.yml up -d --pull missing
+      args:
+        chdir: "{{ voice_dir }}"
+      register: compose_up
+      changed_when: "'Started' in compose_up.stdout or 'Created' in compose_up.stdout or 'Recreated' in compose_up.stdout"
+
+    - name: Wait for Wyoming Piper port
+      wait_for:
+        host: 127.0.0.1
+        port: 10200
+        delay: 2
+        timeout: 120
+
+    - name: Wait for Wyoming Whisper port
+      wait_for:
+        host: 127.0.0.1
+        port: 10300
+        delay: 2
+        timeout: 120
+
+    - name: Wait for Wyoming openWakeWord port
+      wait_for:
+        host: 127.0.0.1
+        port: 10400
+        delay: 2
+        timeout: 120
+
+    - name: Wait for Ollama API port
+      wait_for:
+        host: 127.0.0.1
+        port: 11434
+        delay: 2
+        timeout: 180
+
+    - name: Pull configured Ollama model
+      shell: docker compose -f {{ voice_dir }}/docker-compose.yml exec -T ollama ollama pull {{ ollama_model }}
+      args:
+        chdir: "{{ voice_dir }}"
+      register: ollama_pull
+      changed_when: "'pulling manifest' in ollama_pull.stdout or 'pulling' in ollama_pull.stdout or 'downloading' in ollama_pull.stdout"
+
+    - name: Warm Ollama model into memory
+      command: /usr/local/bin/homeassistant-voice-warmup {{ ollama_model }} {{ ollama_keep_alive }}
+
+    - name: Install voice stack systemd service
+      copy:
+        dest: /etc/systemd/system/homeassistant-voice-stack.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Home Assistant voice services stack
+          After=docker.service network-online.target
+          Requires=docker.service
+          Wants=network-online.target
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          WorkingDirectory={{ voice_dir }}
+          ExecStart=/usr/bin/docker compose up -d --pull missing
+          ExecStop=/usr/bin/docker compose down
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Install Ollama warmup systemd service
+      copy:
+        dest: /etc/systemd/system/homeassistant-voice-warmup.service
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Warm Ollama model for Home Assistant voice stack
+          After=homeassistant-voice-stack.service
+          Requires=homeassistant-voice-stack.service
+
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/local/bin/homeassistant-voice-warmup {{ ollama_model }} {{ ollama_keep_alive }}
+
+          [Install]
+          WantedBy=multi-user.target
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: true
+
+    - name: Enable and start voice stack service
+      systemd:
+        name: homeassistant-voice-stack.service
+        enabled: true
+        state: started
+
+    - name: Enable and start Ollama warmup service
+      systemd:
+        name: homeassistant-voice-warmup.service
+        enabled: true
+        state: started

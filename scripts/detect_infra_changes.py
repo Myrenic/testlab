@@ -14,10 +14,13 @@ ALL_STACKS = [
     "garage",
     "helios",
     "runner",
+    "homeassistant-voice",
 ]
-AUTO_APPLY_STACKS = [stack for stack in ALL_STACKS if stack != "runner"]
+AUTO_APPLY_STACKS = [
+    stack for stack in ALL_STACKS if stack not in {"runner", "homeassistant-voice"}
+]
 MODULE_STACKS = {
-    "lxc": ["atlas", "garage", "omni", "runner", "tailscale"],
+    "lxc": ["atlas", "garage", "homeassistant-voice", "omni", "runner", "tailscale"],
     "talos-image": ["helios"],
     "talos-vm": ["helios"],
     "talos-cluster": ["helios"],

@@ -3,7 +3,7 @@
 # Decrypts infra.json via SOPS, extracts per-stack config, and runs tofu.
 #
 # Usage: ./tofu.sh <stack> <command>
-#   stack:   helios | atlas | omni | tailscale | templates | garage | runner
+#   stack:   helios | atlas | omni | tailscale | templates | garage | runner | homeassistant-voice
 #   command: init | plan | apply | destroy
 #
 # Environment:
