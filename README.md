@@ -77,8 +77,8 @@ Repeat cadence: **weekly Plan/Check**, **monthly Do drill**, and **immediately a
 ## Restore from Backup
 
 Velero backs up to Azure Blob Storage (`velero76b1f66a064d` / container `velero`).
-Daily backups are staggered at 03:00, 03:20, and 03:40 (7-day retention).
-Monthly backups are staggered at 05:00, 05:20, and 05:40 on the 1st (60-day retention).
+Daily backups are staggered at 03:00, 03:10, 03:20, and 03:40 (7-day retention).
+Monthly backups are staggered at 05:00, 05:10, 05:20, and 05:40 on the 1st (60-day retention).
 Backup operations are available in the Velero UI via `https://backups.${SECRET_DOMAIN_0}` (OAuth2-protected).
 
 Velero is hardened to self-heal after host trouble:
