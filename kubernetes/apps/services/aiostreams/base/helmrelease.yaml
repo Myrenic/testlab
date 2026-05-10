@@ -18,6 +18,8 @@ spec:
             envFrom:
               - secretRef:
                   name: aiostreams-secret
+              - secretRef:
+                  name: stremthru-secret
             env:
               TZ: "${TZ}"
               ADDON_NAME: "AIOStreams"
@@ -27,7 +29,7 @@ spec:
               SECRET_KEY: "${AIOSTREAM_SECRET_KEY}"
               ADDON_PASSWORD: "${AIOSTREAM_ADDON_PASSWORD}"
               DATABASE_URI: "sqlite://./data/db.sqlite"
-              BUILTIN_STREMTHRU_URL: "https://stremthru.13377001.xyz"
+              BUILTIN_STREMTHRU_URL: "https://stremthru.${SECRET_DOMAIN_0}"
               BUILTIN_SCRAPE_WITH_ALL_TITLES: "false"
               BUILTIN_DEBRID_INSTANT_AVAILABILITY_CACHE_TTL: "1800"
               BUILTIN_DEBRID_PLAYBACK_LINK_CACHE_TTL: "3600"
@@ -103,7 +105,14 @@ spec:
               LOG_FORMAT: "text"
               LOG_SENSITIVE_INFO: "true"
               LOG_TIMEZONE: "Etc/UTC"
-              DEFAULT_PROXY_ID: "mediaflow"
+              DEFAULT_PROXY_ID: "stremthru"
+              DEFAULT_PROXY_URL: "https://stremthru.${SECRET_DOMAIN_0}"
+              DEFAULT_PROXY_PUBLIC_URL: "https://stremthru.${SECRET_DOMAIN_0}"
+              DEFAULT_PROXY_PROXIED_SERVICES: '["realdebrid","torbox"]'
+              DEFAULT_PROXY_ENABLED: "true"
+              FORCE_PROXY_ID: "stremthru"
+              FORCE_PROXY_URL: "https://stremthru.${SECRET_DOMAIN_0}"
+              FORCE_PROXY_ENABLED: "true"
               FORCE_PROXY_DISABLE_PROXIED_ADDONS: "false"
               ENCRYPT_MEDIAFLOW_URLS: "true"
               ENCRYPT_STREMTHRU_URLS: "true"

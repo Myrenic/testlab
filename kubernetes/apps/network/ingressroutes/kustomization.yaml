@@ -18,5 +18,6 @@ resources:
   - ./coder.yaml
   - ./pihole.yaml
   - ./grafana.yaml
+  - ./stremthru.yaml
   - ./zigbee2mqtt.yaml
   - ./catch-all.yaml

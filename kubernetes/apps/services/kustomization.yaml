@@ -8,4 +8,5 @@ resources:
   - homeassistant
   - mqtt
   - nexus
+  - stremthru
   - zigbee2mqtt
