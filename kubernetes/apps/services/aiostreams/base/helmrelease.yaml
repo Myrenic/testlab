@@ -112,7 +112,7 @@ spec:
               DEFAULT_PROXY_ENABLED: "true"
               FORCE_PROXY_ID: "stremthru"
               FORCE_PROXY_URL: "https://stremthru.${SECRET_DOMAIN_0}"
-              FORCE_PROXY_ENABLED: "true"
+              FORCE_PROXY_ENABLED: "false"
               FORCE_PROXY_DISABLE_PROXIED_ADDONS: "false"
               ENCRYPT_MEDIAFLOW_URLS: "true"
               ENCRYPT_STREMTHRU_URLS: "true"
