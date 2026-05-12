@@ -36,7 +36,7 @@ spec:
               mountPath: /hermes-seed
       containers:
         - name: gateway
-          image: nousresearch/hermes-agent@sha256:df3361f51cff6a5c3cefc088276fe4b2f913097022344b95ecb25f74dd59fa71
+          image: nousresearch/hermes-agent@sha256:9d5b62e6e687cc9003704fc2182606a1b248e9ab565206b191a3303cd536f621
           args:
             - gateway
             - run
@@ -69,7 +69,7 @@ spec:
             - name: data
               mountPath: /opt/data
         - name: dashboard
-          image: nousresearch/hermes-agent@sha256:df3361f51cff6a5c3cefc088276fe4b2f913097022344b95ecb25f74dd59fa71
+          image: nousresearch/hermes-agent@sha256:9d5b62e6e687cc9003704fc2182606a1b248e9ab565206b191a3303cd536f621
           args:
             - dashboard
             - --host
