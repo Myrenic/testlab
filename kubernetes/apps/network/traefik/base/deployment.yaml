@@ -28,7 +28,7 @@ spec:
               app: traefik
       containers:
         - name: traefik
-          image: traefik:v3.7.1
+          image: traefik:v3.7.3
           args:
             - --log.level=INFO
             - --log.format=json
